@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'node_modules/bcryptjs';
 import { Genero } from 'src/users/genero/entity/genero.entity';
@@ -11,15 +12,16 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectRepository(User)
-        private usuarioRepository: Repository<User>,
-        @InjectRepository(Rol)
-        private rolRepository: Repository<Rol>,
-        @InjectRepository(Genero)
-        private generoRepository: Repository<Genero>,
-        @InjectRepository(Perfil)
-        private perfilRepository: Repository<Perfil>,
-    ) {}
+      private readonly jwtService: JwtService,
+      @InjectRepository(User)
+      private usuarioRepository: Repository<User>,
+      @InjectRepository(Rol)
+      private rolRepository: Repository<Rol>,
+      @InjectRepository(Genero)
+      private generoRepository: Repository<Genero>,
+      @InjectRepository(Perfil)
+      private perfilRepository: Repository<Perfil>,
+    ){}
 
 
     async registerUser(userData: CreateUsuarioDto) {
@@ -74,5 +76,35 @@ export class AuthService {
         id_perfil: newProfile.id_perfil,
       },
     };
+  }
+
+    async validateUser(email: string, plainPassword: string): Promise<any> {
+    const user = await this.usuarioRepository.findOne({
+      where: { email },
+      relations: ['rol'],
+    });
+
+    if (user && (await bcrypt.compare(plainPassword, user.password))) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
+  }
+
+  async generateToken(user: any): Promise<{ access_token: string }> {
+    const payload = {
+      sub: user.id_usuario,
+      email: user.email,
+      rol: user.rol.nombre,
+    };
+    return { access_token: this.jwtService.sign(payload) };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.validateUser(email, password);
+    if (!user) throw new UnauthorizedException('Credenciales incorrectas');
+    if (!user.rol)
+      throw new BadRequestException('El usuario no tiene un rol asignado');
+    return this.generateToken(user);
   }
 }
