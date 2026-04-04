@@ -60,8 +60,6 @@ export class AuthService {
     const newProfile = this.perfilRepository.create({
       genero: genero,
         nombre: userData.nombre,
-        foto_perfil: userData.foto_perfil,
-        telefono: userData.telefono,
     });
     newProfile.user = savedUser;
 

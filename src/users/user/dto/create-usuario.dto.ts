@@ -53,26 +53,6 @@ export class CreateUsuarioDto {
   nombre?: string;
 
 
-  @ApiProperty(
-    {
-      description: 'La URL de la foto de perfil del usuario',
-      example: 'https://example.com/profile.jpg'
-    }
-  )
-  @IsOptional()
-  @IsUrl()
-  foto_perfil?: string;
-
-  @ApiProperty(
-    {
-      description: 'El número de teléfono del usuario',
-      example: '1234567890'
-    }
-  )
-  @IsOptional()
-  @IsString()
-  @Length(7, 20)
-  telefono?: string;
 
   @ApiProperty(
     {

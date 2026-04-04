@@ -20,9 +20,6 @@ export class Perfil {
   @Column({ length: 255, nullable: true })
   foto_perfil: string;
 
-  @Column({ length: 20, nullable: true })
-  telefono: string;
-
   @OneToOne(() => User, (user) => user.perfil, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_usuario' })
   user: User;
