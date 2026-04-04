@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RolModule } from './users/rol/rol.module';
 import { PerfilModule } from './users/perfil/perfil.module';
 import { GeneroModule } from './users/genero/genero.module';
+import { MailModule } from './mail/mail.module';
 
 
 
@@ -35,7 +36,8 @@ import { GeneroModule } from './users/genero/genero.module';
     AuthModule,
     RolModule,
     PerfilModule,
-    GeneroModule, 
+    GeneroModule,
+    MailModule, 
   ],
 
   controllers: [AppController],

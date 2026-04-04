@@ -8,9 +8,16 @@ import { Rol } from 'src/users/rol/entity/rol.entity';
 import { User } from 'src/users/user/entity/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { MailModule } from 'src/mail/mail.module';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Rol, Genero, Perfil]),
+  imports: [
+    ConfigModule,
+    PassportModule,
+    MailModule,
+    TypeOrmModule.forFeature([User, Rol, Genero, Perfil]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,6 +29,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService, JwtStrategy]
 })
 export class AuthModule {}

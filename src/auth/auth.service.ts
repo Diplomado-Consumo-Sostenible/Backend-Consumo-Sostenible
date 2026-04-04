@@ -2,12 +2,13 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'node_modules/bcryptjs';
+import { MailService } from 'src/mail/mail.service';
 import { Genero } from 'src/users/genero/entity/genero.entity';
 import { Perfil } from 'src/users/perfil/entity/perfil.entity';
 import { Rol } from 'src/users/rol/entity/rol.entity';
 import { CreateUsuarioDto } from 'src/users/user/dto/create-usuario.dto';
 import { User } from 'src/users/user/entity/user.entity';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
       private generoRepository: Repository<Genero>,
       @InjectRepository(Perfil)
       private perfilRepository: Repository<Perfil>,
+      private readonly mailService: MailService,
     ){}
 
 
@@ -58,8 +60,6 @@ export class AuthService {
     const newProfile = this.perfilRepository.create({
       genero: genero,
         nombre: userData.nombre,
-        foto_perfil: userData.foto_perfil,
-        telefono: userData.telefono,
     });
     newProfile.user = savedUser;
 
@@ -106,5 +106,66 @@ export class AuthService {
     if (!user.rol)
       throw new BadRequestException('El usuario no tiene un rol asignado');
     return this.generateToken(user);
+  }
+
+  private generateOtp(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  async requestPasswordReset(email: string) {
+    const user = await this.usuarioRepository.findOne({ where: { email } });
+
+    if (!user)
+      throw new BadRequestException('No existe un usuario con ese email');
+
+    const otp = this.generateOtp();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.passwordResetOTP = otp;
+    user.passwordResetExpires = expires;
+    await this.usuarioRepository.save(user);
+
+    await this.mailService.sendPasswordResetOtp(email, otp);
+
+    return { message: 'Se ha enviado un código OTP a tu correo.' };
+  }
+
+  async resendPasswordResetOtp(email: string) {
+    const user = await this.usuarioRepository.findOne({ where: { email } });
+
+    if (!user) throw new BadRequestException('El usuario no existe.');
+
+    const otp = this.generateOtp();
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.passwordResetOTP = otp;
+    user.passwordResetExpires = expires;
+    await this.usuarioRepository.save(user);
+
+    await this.mailService.sendPasswordResetOtp(email, otp);
+
+    return { message: 'Se ha reenviado el código OTP.' };
+  }
+
+  async resetPassword(otp: string, newPassword: string) {
+    const user = await this.usuarioRepository.findOne({
+      where: {
+        passwordResetOTP: otp,
+        passwordResetExpires: MoreThan(new Date()),
+      },
+    });
+
+    if (!user) throw new BadRequestException('Código OTP inválido o expirado');
+
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashed;
+    user.passwordResetOTP = null;
+    user.passwordResetExpires = null;
+
+    await this.usuarioRepository.save(user);
+
+    return { message: 'Contraseña restablecida correctamente' };
   }
 }

@@ -3,6 +3,9 @@ import { AuthService } from './auth.service';
 import { CreateUsuarioDto } from 'src/users/user/dto/create-usuario.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
+import { RequestPasswordResetDto } from 'src/mail/dto/request-password-reset.dto';
+import { ResendPasswordResetDto } from 'src/mail/dto/resend-password-reset.dto';
+import { ResetPasswordDto } from 'src/mail/dto/reset-password.dto';
 
 
 @ApiTags('auth')
@@ -25,5 +28,29 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto) {
     const { email, password } = loginDto;
     return this.authService.login(email, password);
+  }
+
+  @Post('request-password-reset')
+  @ApiOperation({ summary: 'Solicitar restablecimiento de contraseña' })
+  @ApiResponse({ status: 200, description: 'OTP enviado al correo electrónico.' })
+  @ApiResponse({ status: 400, description: 'Error al solicitar el restablecimiento de contraseña.' })
+  async requestReset(@Body() dto: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('resend-password-reset')
+  @ApiOperation({ summary: 'Reenviar OTP para restablecimiento de contraseña' })
+  @ApiResponse({ status: 200, description: 'OTP reenviado al correo electrónico.' })
+  @ApiResponse({ status: 400, description: 'Error al reenviar el OTP.' })
+  async resendPasswordReset(@Body() dto: ResendPasswordResetDto) {
+    return this.authService.resendPasswordResetOtp(dto.email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Restablecer contraseña' })
+  @ApiResponse({ status: 200, description: 'Contraseña restablecida exitosamente.' })
+  @ApiResponse({ status: 400, description: 'Error al restablecer la contraseña.' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.otp, dto.newPassword);
   }
 }
