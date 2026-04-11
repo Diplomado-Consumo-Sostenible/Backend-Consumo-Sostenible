@@ -2,10 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
+  const configService = app.get(ConfigService);
   // Configuración de Swagger
   const config = new DocumentBuilder()
     .setTitle('API Consumo Sostenible')
@@ -26,13 +27,13 @@ async function bootstrap() {
   );
 
   //app.setGlobalPrefix('api');
-
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
   app.enableCors({
-    origin: 'http://localhost:5173',
-    Credential: true,
+    origin: frontendUrl,
+    credentials: true,
   });
 
-  const port = process.env.SERVER_PORT || 3000;
+  const port = configService.get<number>('SERVER_PORT') || 3000;
   await app.listen(port);
 
   console.log(`🚀 Server running on http://localhost:${port}/`);
