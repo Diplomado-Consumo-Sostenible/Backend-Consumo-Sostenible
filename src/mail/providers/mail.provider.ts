@@ -36,7 +36,7 @@ export class MailProvider {
     try {
       const html = await this.renderTemplate(template, context);
       await this.transporter.sendMail({
-        from: `"Mi Gasto" <${process.env.MAIL_USER}>`,
+        from: `"EcoVida" <${process.env.MAIL_USER}>`,
         to,
         subject,
         html,
