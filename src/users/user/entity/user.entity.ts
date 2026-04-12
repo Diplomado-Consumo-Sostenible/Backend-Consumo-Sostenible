@@ -1,6 +1,15 @@
-import { Perfil } from "src/users/perfil/entity/perfil.entity";
-import { Rol } from "src/users/rol/entity/rol.entity";
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { Perfil } from 'src/users/perfil/entity/perfil.entity';
+import { Rol } from 'src/users/rol/entity/rol.entity';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -22,6 +31,9 @@ export class User {
 
   @Column({ default: 0 })
   passwordResetAttempts: number;
+
+  @Column({ default: true })
+  isActive: boolean;
 
   @ManyToOne(() => Rol, (rol) => rol.users)
   @JoinColumn({ name: 'rolId' })

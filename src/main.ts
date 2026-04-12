@@ -7,17 +7,28 @@ import { ConfigService } from '@nestjs/config';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  // Configuración de Swagger
+
   const config = new DocumentBuilder()
     .setTitle('API Consumo Sostenible')
     .setDescription('Backend para la gestión de consumo responsable')
     .setVersion('1.0')
-    .addTag('generos')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Ingresa tu token JWT',
+        in: 'header',
+      },
+      'bearer',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('api', app, document);
-  // Pipes globales para validaciones
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -26,7 +37,6 @@ async function bootstrap() {
     }),
   );
 
-  //app.setGlobalPrefix('api');
   const frontendUrl = configService.get<string>('FRONTEND_URL');
   app.enableCors({
     origin: frontendUrl,

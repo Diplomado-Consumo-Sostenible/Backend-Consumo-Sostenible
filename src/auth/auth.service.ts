@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'node_modules/bcryptjs';
@@ -12,21 +16,20 @@ import { Repository, MoreThan } from 'typeorm';
 
 @Injectable()
 export class AuthService {
-    constructor(
-      private readonly jwtService: JwtService,
-      @InjectRepository(User)
-      private usuarioRepository: Repository<User>,
-      @InjectRepository(Rol)
-      private rolRepository: Repository<Rol>,
-      @InjectRepository(Genero)
-      private generoRepository: Repository<Genero>,
-      @InjectRepository(Perfil)
-      private perfilRepository: Repository<Perfil>,
-      private readonly mailService: MailService,
-    ){}
+  constructor(
+    private readonly jwtService: JwtService,
+    @InjectRepository(User)
+    private usuarioRepository: Repository<User>,
+    @InjectRepository(Rol)
+    private rolRepository: Repository<Rol>,
+    @InjectRepository(Genero)
+    private generoRepository: Repository<Genero>,
+    @InjectRepository(Perfil)
+    private perfilRepository: Repository<Perfil>,
+    private readonly mailService: MailService,
+  ) {}
 
-
-    async registerUser(userData: CreateUsuarioDto) {
+  async registerUser(userData: CreateUsuarioDto) {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(userData.password, salt);
 
@@ -59,7 +62,7 @@ export class AuthService {
 
     const newProfile = this.perfilRepository.create({
       genero: genero,
-        nombre: userData.nombre,
+      nombre: userData.nombre,
     });
     newProfile.user = savedUser;
 
@@ -78,13 +81,18 @@ export class AuthService {
     };
   }
 
-    async validateUser(email: string, plainPassword: string): Promise<any> {
+  async validateUser(email: string, plainPassword: string): Promise<any> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
       relations: ['rol'],
     });
 
     if (user && (await bcrypt.compare(plainPassword, user.password))) {
+      if (!user.isActive) {
+        throw new UnauthorizedException(
+          'Tu cuenta ha sido desactivada. Por favor, contacta a un administrador.',
+        );
+      }
       const { password, ...result } = user;
       return result;
     }
