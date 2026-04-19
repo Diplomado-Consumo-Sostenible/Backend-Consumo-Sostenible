@@ -1,3 +1,4 @@
+import { Business } from 'src/business/business/entity/business.entity';
 import { Perfil } from 'src/users/perfil/entity/perfil.entity';
 import { Rol } from 'src/users/rol/entity/rol.entity';
 import {
@@ -6,6 +7,7 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   Unique,
@@ -41,4 +43,7 @@ export class User {
 
   @OneToOne(() => Perfil, (perfil) => perfil.user)
   perfil: Perfil;
+
+  @OneToMany(() => Business, (business) => business.user)
+  business: Business;
 }

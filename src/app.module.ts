@@ -3,14 +3,15 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './users/user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule, ConfigService} from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RolModule } from './users/rol/rol.module';
 import { PerfilModule } from './users/perfil/perfil.module';
 import { GeneroModule } from './users/genero/genero.module';
 import { MailModule } from './mail/mail.module';
-
-
+import { BusinessModule } from './business/business/business.module';
+import { CategoryModule } from './business/category/category.module';
+import { TagsModule } from './business/tags/tags.module';
 
 @Module({
   imports: [
@@ -32,12 +33,15 @@ import { MailModule } from './mail/mail.module';
       }),
       inject: [ConfigService],
     }),
-    UserModule, 
+    UserModule,
     AuthModule,
     RolModule,
     PerfilModule,
     GeneroModule,
-    MailModule, 
+    MailModule,
+    BusinessModule,
+    CategoryModule,
+    TagsModule,
   ],
 
   controllers: [AppController],
