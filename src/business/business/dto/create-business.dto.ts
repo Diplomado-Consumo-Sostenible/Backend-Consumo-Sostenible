@@ -26,6 +26,7 @@ export class CreateBusinessDto {
   })
   @IsNotEmpty()
   @IsString()
+  @IsOptional()
   description: string;
 
   @ApiPropertyOptional({
@@ -51,6 +52,7 @@ export class CreateBusinessDto {
     example: 'Calle 123 #45-67, Barrio Centro',
   })
   @IsNotEmpty()
+  @IsOptional()
   @IsString()
   address: string;
 
@@ -110,6 +112,14 @@ export class CreateBusinessDto {
   @IsUrl()
   facebookUrl?: string;
 
+    @ApiPropertyOptional({
+    description: 'URL del perfil de X (anteriormente Twitter)',
+    example: 'https://x.com/ecoburger',
+  })
+  @IsOptional()
+  @IsUrl()
+  xUrl?: string;
+
   @ApiPropertyOptional({
     description: 'Objeto JSON con los horarios de atención',
     example: {
@@ -122,13 +132,13 @@ export class CreateBusinessDto {
   @IsObject()
   schedule?: Record<string, string>;
 
-  // --- RELACIONES (Se reciben los IDs) ---
 
   @ApiProperty({
     description: 'ID de la categoría a la que pertenece',
     example: 1,
   })
   @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   categoryId: number;
 

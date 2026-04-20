@@ -26,12 +26,12 @@ import {
 @ApiTags('category')
 @ApiBearerAuth()
 @Controller('category')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Post()
-  @Roles('admin') // Solo administradores
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Crear una nueva categoría' })
   @ApiResponse({ status: 201, description: 'Categoría creada exitosamente.' })
   @ApiResponse({
@@ -47,7 +47,6 @@ export class CategoryController {
   }
 
   @Get()
-  // Sin @Roles para que todo usuario autenticado pueda listar
   @ApiOperation({ summary: 'Obtener todas las categorías' })
   @ApiResponse({
     status: 200,
@@ -71,7 +70,8 @@ export class CategoryController {
   }
 
   @Patch(':id')
-  @Roles('admin') // Solo administradores
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Actualizar una categoría' })
   @ApiParam({
     name: 'id',
@@ -99,7 +99,8 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  @Roles('admin') // Solo administradores
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Eliminar una categoría' })
   @ApiParam({
     name: 'id',

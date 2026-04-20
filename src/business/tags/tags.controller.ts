@@ -27,11 +27,11 @@ import { UpdateTagDto } from './dto/update-tags';
 @ApiTags('tags')
 @ApiBearerAuth()
 @Controller('tags')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class TagsController {
   constructor(private readonly tagService: TagsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Crear un nuevo tag' })
   @ApiResponse({ status: 201, description: 'Tag creado exitosamente.' })
@@ -67,6 +67,7 @@ export class TagsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Actualizar un tag' })
   @ApiParam({
@@ -88,6 +89,7 @@ export class TagsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Eliminar un tag' })
   @ApiParam({
