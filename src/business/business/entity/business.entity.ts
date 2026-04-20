@@ -49,19 +49,19 @@ export class Business {
   phone: string;
 
   @Column({ nullable: true })
-  email: string;
+  emailBusiness: string;
 
   // --- REDES SOCIALES Y WEB ---
-  @Column()
+  @Column({ nullable: true })
   website: string;
 
-  @Column()
+  @Column({ nullable: true })
   instagramUrl: string;
 
-  @Column()
+  @Column({ nullable: true })
   facebookUrl: string;
 
-  @Column()
+  @Column({ nullable: true })
   xUrl: string;
 
   // --- HORARIOS ---

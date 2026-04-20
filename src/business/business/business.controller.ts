@@ -15,7 +15,7 @@ import { UpdateBusinessDto } from './dto/update-business.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { BusinessStatus } from './entity/business.entity';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 
@@ -103,37 +103,5 @@ export class BusinessController {
     return this.businessService.remove(id, user);
   }
 
-  // --- ENDPOINTS DE ADMINISTRADOR ---
 
-  @Patch(':id/status')
-  @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Estado del negocio actualizado exitosamente' })
-  @ApiResponse({ status: 400, description: 'Estado inválido para el negocio' })
-  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
-  @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiOperation({ summary: 'Aprobar o rechazar negocio (Solo Admin)' })
-  changeStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: BusinessStatus,
-  ) {
-    return this.businessService.changeStatus(id, status);
-  }
-
-  @Patch(':id/toggle-active')
-  @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Estado de actividad del negocio actualizado exitosamente' })
-  @ApiResponse({ status: 400, description: 'Valor inválido para isActive' })
-  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
-  @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiOperation({ summary: 'Banear/Desactivar un negocio (Solo Admin)' })
-  toggleActive(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('isActive') isActive: boolean,
-  ) {
-    return this.businessService.toggleActive(id, isActive);
-  }
 }

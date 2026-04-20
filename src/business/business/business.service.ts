@@ -143,7 +143,6 @@ export class BusinessService {
       }
     }
 
-    // Actualizar el negocio con los nuevos datos
     Object.assign(business, businessData);
     return await this.businessRepository.save(business);
 
@@ -169,5 +168,5 @@ export class BusinessService {
     return { message: `El negocio con ID ${id} fue eliminado permanentemente` };
   }
 
- 
+  
 }

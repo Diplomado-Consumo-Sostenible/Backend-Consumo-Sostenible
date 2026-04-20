@@ -86,7 +86,7 @@ export class CreateBusinessDto {
   })
   @IsOptional()
   @IsEmail()
-  email?: string;
+  emailBusiness?: string;
 
   @ApiPropertyOptional({
     description: 'Página web oficial',
