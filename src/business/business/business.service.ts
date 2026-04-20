@@ -168,5 +168,35 @@ export class BusinessService {
     return { message: `El negocio con ID ${id} fue eliminado permanentemente` };
   }
 
-  
+  async changeStatus(id: number, status: BusinessStatus) {
+    const business = await this.businessRepository.findOneBy({ id_business: id });
+    if (!business) throw new NotFoundException('Negocio no encontrado');
+
+    if (!Object.values(BusinessStatus).includes(status)) {
+      throw new BadRequestException('Estado inválido para el negocio');
+    }
+    business.status = status;
+    return await this.businessRepository.save(business);
+  }
+
+  async toggleActive(id: number, isActive: boolean) {
+    if (typeof isActive !== 'boolean') {
+      throw new BadRequestException(
+        'El campo isActive debe ser un valor booleano',
+      );
+    }
+
+    const business = await this.businessRepository.findOneBy({
+      id_business: id,
+    });
+    if (!business) throw new NotFoundException('Negocio no encontrado');
+
+    business.isActive = isActive;
+    await this.businessRepository.save(business);
+
+    return {
+      message: `El negocio ha sido ${isActive ? 'activado' : 'desactivado/baneado'} correctamente`,
+      data: business,
+    };
+  }
 }

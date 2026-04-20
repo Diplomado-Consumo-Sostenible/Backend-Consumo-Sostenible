@@ -103,5 +103,49 @@ export class BusinessController {
     return this.businessService.remove(id, user);
   }
 
+  // --- ENDPOINTS DE ADMINISTRADOR ---
 
+  @Patch(':id/status')
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Estado del negocio actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Estado inválido para el negocio' })
+  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
+  @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Aprobar o rechazar negocio (Solo Admin)' })
+  @ApiBody({ 
+    schema: { 
+      type: 'object', 
+      properties: { status: { type: 'string', enum: ['Active', 'Pending', 'Rejected'], example: 'Active' } } 
+    } 
+  })
+  changeStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: BusinessStatus,
+  ) {
+    return this.businessService.changeStatus(id, status);
+  }
+
+  @Patch(':id/toggle-active')
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Estado de actividad del negocio actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Valor inválido para isActive' })
+  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
+  @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Banear/Desactivar un negocio (Solo Admin)' })
+  @ApiBody({ 
+    schema: { 
+      type: 'object', 
+      properties: { isActive: { type: 'boolean', example: false } } 
+    } 
+  })
+  toggleActive(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('isActive') isActive: boolean,
+  ) {
+    return this.businessService.toggleActive(id, isActive);
+  }
 }
