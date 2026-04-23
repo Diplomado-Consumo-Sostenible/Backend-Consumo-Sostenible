@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
@@ -18,6 +19,8 @@ import { Roles } from 'src/auth/decorator/roles.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { BusinessStatus } from './entity/business.entity';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
+import { GetBusinessesFilterDto } from './dto/get-businesses-filter.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @ApiTags('business')
 @ApiBearerAuth()
@@ -25,15 +28,28 @@ import { CurrentUser } from 'src/auth/decorator/user.decorator';
 export class BusinessController {
   constructor(private readonly businessService: BusinessService) {}
 
-  //rutas publicas
+  //ruta publicas
   @Get()
   @ApiOperation({ summary: 'Listar todos los negocios (Público)' })
   @ApiResponse({ status: 200, description: 'Lista de negocios disponibles' })
   @ApiResponse({ status: 404, description: 'No hay negocios disponibles' })
-  findAllPublic() {
-    return this.businessService.findAllPublic();
+  findAllPublic(@Query() paginationDto: PaginationDto) {
+    return this.businessService.findAllPublic(paginationDto);
   }
 
+  @Get('admin/list')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiOperation({ summary: 'Listar negocios con filtros (Solo Admin)' })
+  @ApiResponse({ status: 200, description: 'Lista de negocios según filtros' })
+  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
+  @Roles('admin') // Protegido solo para administradores
+  @ApiOperation({ summary: 'Obtener lista de negocios con filtros (Solo Admin)' })
+  findAllForAdmin(@Query() filters: GetBusinessesFilterDto) {
+    return this.businessService.findAllForAdmin(filters);
+  }
+
+  //ruta publicas
   @Get(':id')
   @ApiOperation({ summary: 'Ver detalles de un negocio (Público)' })
   @ApiResponse({ status: 200, description: 'Detalles del negocio' })
@@ -117,14 +133,18 @@ export class BusinessController {
   @ApiBody({ 
     schema: { 
       type: 'object', 
-      properties: { status: { type: 'string', enum: ['Active', 'Pending', 'Rejected'], example: 'Active' } } 
+      properties: { 
+        status: { type: 'string', enum: ['Active', 'Pending', 'Rejected'], example: 'Rejected' },
+        rejectionReason: { type: 'string', example: 'La descripción no detalla el impacto ambiental.', nullable: true }
+      } 
     } 
   })
   changeStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('status') status: BusinessStatus,
+    @Body('rejectionReason') rejectionReason?: string,
   ) {
-    return this.businessService.changeStatus(id, status);
+    return this.businessService.changeStatus(id, status, rejectionReason);
   }
 
   @Patch(':id/toggle-active')

@@ -26,6 +26,7 @@
         border: 1px solid #f0f0f0;
       }
 
+
       .logo-container {
         text-align: center;
         margin-bottom: 25px;
@@ -35,7 +36,6 @@
         max-width: 180px;
         height: auto;
       }
-
       .title {
         font-size: 26px;
         font-weight: 700;
@@ -52,22 +52,21 @@
         text-align: center;
       }
 
-      .otp-box {
-        font-size: 40px;
-        font-weight: 700;
-        background: #e6fdf5;
-        padding: 20px;
-        text-align: center;
-        border-radius: 14px;
-        letter-spacing: 12px;
-        border: 2px solid #a3f2d7;
-        color: #00a878;
-        margin: 30px 0;
-      }
-
       .highlight {
         color: #00a878;
         font-weight: 600;
+      }
+
+      .reason-box {
+        background: #fff3f3;
+        border-left: 4px solid #ff4d4f;
+        padding: 15px;
+        margin: 20px 0;
+        text-align: left;
+        color: #d9363e;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 1.6;
       }
 
       .footer {
@@ -91,19 +90,24 @@
       <div class='logo-container'>
         <img src='{{logoUrl}}' alt='EcoVida Logo' class='logo' />
       </div>
+      <div class='title'>Actualización de tu Negocio</div>
 
-      <div class='title'>Restablecer Contraseña</div>
+      <p class='text'>Hola, el estado de tu negocio <strong class='highlight'>{{businessName}}</strong> ha cambiado.</p>
 
-      <p class='text'>Hola, hemos recibido una solicitud para cambiar tu
-        contraseña en EcoVida.</p>
-      <p class='text'>Tu código de verificación es:</p>
+      {{#if isApproved}}
+        <p class='text'>¡Felicidades! Tu negocio ha sido <strong>Aprobado</strong> y ya es visible en nuestra plataforma.</p>
+      {{else}}
+        <p class='text'>Lamentablemente, tu solicitud de negocio ha sido <strong>Rechazada</strong> en esta ocasión.</p>
+        
+        {{#if rejectionReason}}
+        <div class='reason-box'>
+          <strong>Motivo del rechazo:</strong><br/>
+          {{rejectionReason}}
+        </div>
+        {{/if}}
 
-      <div class='otp-box'>{{otp}}</div>
-
-      <p class='text'>Este código es válido por
-        <strong class='highlight'>10 minutos</strong>.<br />
-        Si no solicitaste este cambio, puedes ignorar este correo de forma
-        segura.</p>
+        <p class='text'>¡No te desanimes! Puedes ingresar a tu cuenta, <strong>editar la información de tu negocio</strong> para corregir estos detalles, y al guardar los cambios, tu solicitud será enviada a revisión de nuevo.</p>
+      {{/if}}
 
       <div class='footer'>
         <span class='brand-name'>EcoVida</span>
@@ -113,3 +117,7 @@
     </div>
   </body>
 </html>
+
+
+
+

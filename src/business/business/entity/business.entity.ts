@@ -80,6 +80,9 @@ export class Business {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  rejectionReason: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
