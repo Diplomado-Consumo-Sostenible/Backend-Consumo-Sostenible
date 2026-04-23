@@ -27,7 +27,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -37,13 +37,13 @@ async function bootstrap() {
     }),
   );
 
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const corsOrigin = configService.get<string>('APP_CORS_ORIGIN') || '*';
   app.enableCors({
-    origin: frontendUrl,
+    origin: corsOrigin,
     credentials: true,
   });
 
-  const port = configService.get<number>('SERVER_PORT') || 3000;
+  const port = configService.get<number>('APP_PORT') || 3000;
   await app.listen(port);
 
   console.log(`🚀 Server running on http://localhost:${port}/`);
