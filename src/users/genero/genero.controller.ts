@@ -14,11 +14,11 @@ import {
 import { GeneroService } from './genero.service';
 import { CreateGeneroDto } from './dto/create-genero.dto';
 import { UpdateGeneroDto } from './dto/Update-genero.dto';
-//import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
-//import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
-//import { Roles } from 'src/auth/decorator/roles.decorator';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
+import { Roles } from 'src/auth/decorator/roles.decorator';
 
 
 @ApiTags('generos')
@@ -27,8 +27,8 @@ export class GeneroController {
   constructor(private readonly generoService: GeneroService) {}
 
   @Post()
-  //@UseGuards(JwtAuthGuard, RolesGuard)
-  //@Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Crear un nuevo género' })
   @ApiResponse({ status: 201, description: 'Género creado exitosamente.' })
   @ApiResponse({ status: 400, description: 'Error al crear el género.' })
@@ -37,7 +37,8 @@ export class GeneroController {
   }
 
   @Get()
-  //@Roles('admin', 'usuario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'usuario')
   @ApiOperation({ summary: 'Obtener una lista paginada de géneros' })
   @ApiResponse({ status: 200, description: 'Lista de géneros obtenida exitosamente.' })
   @ApiResponse({ status: 400, description: 'Error al obtener los géneros.' })
@@ -46,7 +47,8 @@ export class GeneroController {
   }
 
   @Get(':id')
-  //@Roles('admin', 'usuario')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'usuario')
   @ApiOperation({ summary: 'Obtener un género por su ID' })
   @ApiResponse({ status: 200, description: 'Género obtenido exitosamente.' })
   @ApiResponse({ status: 404, description: 'Género no encontrado.' })
@@ -55,8 +57,8 @@ export class GeneroController {
   }
 
   @Patch(':id')
-  //@UseGuards(JwtAuthGuard, RolesGuard)
-  //@Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Actualizar un género por su ID' })
   @ApiResponse({ status: 200, description: 'Género actualizado exitosamente.' })
   @ApiResponse({ status: 400, description: 'Error al actualizar el género.' })
@@ -69,8 +71,8 @@ export class GeneroController {
   }
 
   @Delete(':id')
-  //@UseGuards(JwtAuthGuard, RolesGuard)
-  //@Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   @ApiOperation({ summary: 'Eliminar un género por su ID' })
   @ApiResponse({ status: 200, description: 'Género eliminado exitosamente.' })
   @ApiResponse({ status: 404, description: 'Género no encontrado.' })

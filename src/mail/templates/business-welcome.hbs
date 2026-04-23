@@ -52,19 +52,6 @@
         text-align: center;
       }
 
-      .otp-box {
-        font-size: 40px;
-        font-weight: 700;
-        background: #e6fdf5;
-        padding: 20px;
-        text-align: center;
-        border-radius: 14px;
-        letter-spacing: 12px;
-        border: 2px solid #a3f2d7;
-        color: #00a878;
-        margin: 30px 0;
-      }
-
       .highlight {
         color: #00a878;
         font-weight: 600;
@@ -92,18 +79,11 @@
         <img src='{{logoUrl}}' alt='EcoVida Logo' class='logo' />
       </div>
 
-      <div class='title'>Restablecer Contraseña</div>
+      <div class='title'>¡Bienvenido a EcoVida!</div>
 
-      <p class='text'>Hola, hemos recibido una solicitud para cambiar tu
-        contraseña en EcoVida.</p>
-      <p class='text'>Tu código de verificación es:</p>
-
-      <div class='otp-box'>{{otp}}</div>
-
-      <p class='text'>Este código es válido por
-        <strong class='highlight'>10 minutos</strong>.<br />
-        Si no solicitaste este cambio, puedes ignorar este correo de forma
-        segura.</p>
+      <p class='text'>Hola, hemos recibido la solicitud de registro para tu negocio: <strong class='highlight'>{{businessName}}</strong>.</p>
+      
+      <p class='text'>Actualmente se encuentra en estado <strong>Pendiente</strong>. Nuestro equipo revisará la información y te notificaremos cuando sea aprobado o si necesitamos que corrijas algún detalle.</p>
 
       <div class='footer'>
         <span class='brand-name'>EcoVida</span>

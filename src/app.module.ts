@@ -13,12 +13,14 @@ import { BusinessModule } from './business/business/business.module';
 import { CategoryModule } from './business/category/category.module';
 import { TagsModule } from './business/tags/tags.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
     }),
+
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
