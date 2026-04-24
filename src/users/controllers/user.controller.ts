@@ -24,6 +24,8 @@ import {
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/Update-usuario.dto';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
+import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
+import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
 
 @ApiTags('user')
 @ApiBearerAuth() 
@@ -140,5 +142,20 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Prohibido. No tienes permisos.' })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.userService.remove(id, user);
+  }
+
+  // Estos endpoints los puede usar cualquier rol autenticado
+  @Patch('me/password')
+  @Roles('ADMIN', 'owner', 'USER')
+  @ApiOperation({ summary: 'Cambiar mi contraseña' })
+  changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: any) {
+    return this.userService.changePassword(user.id_usuario, dto);
+  }
+
+  @Patch('me/email')
+  @Roles('ADMIN', 'owner', 'USER')
+  @ApiOperation({ summary: 'Cambiar mi correo electrónico' })
+  changeEmail(@Body() dto: ChangeEmailDto, @CurrentUser() user: any) {
+    return this.userService.changeEmail(user.id_usuario, dto);
   }
 }

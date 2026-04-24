@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import bcrypt from 'bcryptjs';
 import { UpdateUsuarioDto } from '../dto/Update-usuario.dto';
@@ -7,6 +7,8 @@ import { PerfilRepository } from 'src/shared/repositories/perfil.repository';
 import { RolRepository } from 'src/shared/repositories/rol.repository';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
+import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
+import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
 
 @Injectable()
 export class UserService {
@@ -187,5 +189,38 @@ export class UserService {
     await this.usuarioRepository.remove(userToDelete);
 
     return { message: `El usuario con ID ${id} y todos sus negocios han sido eliminados permanentemente.` };
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.usuarioRepository.findOne({ where: { id_usuario: userId } });
+    
+    if (!user) throw new NotFoundException('Usuario no encontrado.');
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) throw new UnauthorizedException('La contraseña actual es incorrecta.');
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(dto.newPassword, salt);
+    
+    await this.usuarioRepository.save(user);
+    return { message: 'Contraseña actualizada exitosamente.' };
+  }
+
+  async changeEmail(userId: number, dto: ChangeEmailDto) {
+    const user = await this.usuarioRepository.findOne({ where: { id_usuario: userId } });
+    
+    if (!user) throw new NotFoundException('Usuario no encontrado.');
+
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) throw new UnauthorizedException('Contraseña incorrecta. No se puede cambiar el correo.');
+
+    const existingEmail = await this.usuarioRepository.findOne({ where: { email: dto.newEmail } });
+    if (existingEmail && existingEmail.id_usuario !== userId) {
+      throw new BadRequestException('Este correo electrónico ya está en uso.');
+    }
+
+    user.email = dto.newEmail;
+    await this.usuarioRepository.save(user);
+    return { message: 'Correo electrónico actualizado exitosamente.' };
   }
 }
