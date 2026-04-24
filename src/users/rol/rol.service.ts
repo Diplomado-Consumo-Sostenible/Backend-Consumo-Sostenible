@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Rol } from './entity/rol.entity';
+import { Rol } from '../../shared/entities/rol.entity';
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
+import { RolRepository } from 'src/shared/repositories/rol.repository';
 
 
 @Injectable()
 export class RolService {
   constructor(
-    @InjectRepository(Rol)
-    private readonly rolRepository: Repository<Rol>,
+    private readonly rolRepository: RolRepository,
   ) {}
 
   // Crear rol
