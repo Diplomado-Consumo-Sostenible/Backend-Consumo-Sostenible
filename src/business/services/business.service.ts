@@ -36,9 +36,8 @@ export class BusinessService {
     const skip = (page - 1) * limit;
 
     const [businesses, total] = await this.businessRepository.findAndCount({
-      // El público solo puede ver negocios completamente aprobados y activos
       where: { status: BusinessStatus.ACTIVE, isActive: true },
-      relations: ['category'], // Al público quizás no le mostramos el 'user' por privacidad
+      relations: ['category'],
       order: { createdAt: 'DESC' },
       skip: skip,
       take: limit,
