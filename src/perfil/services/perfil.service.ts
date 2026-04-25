@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PerfilRepository } from 'src/shared/repositories/perfil.repository';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { UpdatePerfilDto } from '../dto/update-perfil.dto';
+import { UpdateFotoDto } from '../dto/update-foto.dto';
 import { createPaginationResponse } from 'src/common/pagination.helper';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
 import { FindOptionsWhere } from 'typeorm';
@@ -40,7 +41,6 @@ export class PerfilService {
     const perfil = await this.findMyProfile(userId);
 
     if (dto.nombre) perfil.nombre = dto.nombre;
-    if (dto.foto_perfil) perfil.foto_perfil = dto.foto_perfil;
     
     if (dto.id_genero) {
       const genero = await this.generoRepository.findOne({ where: { id_genero: dto.id_genero } });
@@ -50,6 +50,16 @@ export class PerfilService {
 
     await this.perfilRepository.save(perfil);
     return { message: 'Perfil actualizado exitosamente', perfil };
+  }
+
+
+  async updateMyPhoto(userId: number, dto: UpdateFotoDto) {
+    const perfil = await this.findMyProfile(userId);
+
+    if (dto.foto_perfil) perfil.foto_perfil = dto.foto_perfil;
+
+    await this.perfilRepository.save(perfil);
+    return { message: 'Foto de perfil actualizada exitosamente', perfil };
   }
 
 
@@ -99,7 +109,6 @@ export class PerfilService {
     const perfil = await this.findOne(id); 
 
     if (dto.nombre) perfil.nombre = dto.nombre;
-    if (dto.foto_perfil) perfil.foto_perfil = dto.foto_perfil;
     
     if (dto.id_genero) {
       const genero = await this.generoRepository.findOne({ where: { id_genero: dto.id_genero } });

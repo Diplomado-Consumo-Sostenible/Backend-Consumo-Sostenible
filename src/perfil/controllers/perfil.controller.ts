@@ -7,6 +7,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { PerfilService } from '../services/perfil.service';
 import { UpdatePerfilDto } from '../dto/update-perfil.dto';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
+import { UpdateFotoDto } from '../dto/update-foto.dto';
 
 
 @ApiTags('perfil')
@@ -35,6 +36,15 @@ export class PerfilController {
     return this.perfilService.updateMyProfile(user.id_usuario, dto);
   }
 
+  @Patch('me/foto')
+  @Roles('ADMIN', 'owner', 'USER')
+  @ApiResponse({ status: 200, description: 'Foto de perfil actualizada correctamente' })
+  @ApiResponse({ status: 404, description: 'Perfil no encontrado' })
+  @ApiResponse({ status: 400, description: 'URL de foto no válida' })
+  @ApiOperation({ summary: 'Actualizar únicamente la foto de perfil' })
+  updateMyPhoto(@Body() dto: UpdateFotoDto, @CurrentUser() user: any) {
+    return this.perfilService.updateMyPhoto(user.id_usuario, dto);
+  }
 
   @Get()
   @Roles('ADMIN')

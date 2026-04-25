@@ -49,5 +49,10 @@ export const config = async () => {
       sender: process.env.MAIL_SENDER || 'noreply@samawe.com',
       secure: process.env.MAIL_SECURE === 'true',
     },
+    cloudinary: {
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'default-cloud-name',
+      apiKey: process.env.CLOUDINARY_API_KEY || 'default-api-key',
+      apiSecret: process.env.CLOUDINARY_API_SECRET || 'default-api-secret',
+    },
   };
 };
