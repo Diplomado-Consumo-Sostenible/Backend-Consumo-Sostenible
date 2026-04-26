@@ -7,10 +7,7 @@ export class UpdatePerfilDto {
   @IsString()
   nombre?: string;
 
-  @ApiPropertyOptional({ description: 'URL de la foto', example: 'https://...' })
-  @IsOptional()
-  @IsUrl()
-  foto_perfil?: string;
+  
 
   @ApiPropertyOptional({ description: 'ID del género', example: 1 })
   @IsOptional()

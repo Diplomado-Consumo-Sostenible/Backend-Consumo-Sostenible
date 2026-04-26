@@ -22,7 +22,7 @@ export class UserService {
 
   async findAll() {
     return this.usuarioRepository.find({
-      relations: ['rol', 'perfil'],
+      relations: ['rol', 'perfil', 'perfil.genero'],
       select: {
         id_usuario: true,
         email: true,
@@ -30,6 +30,10 @@ export class UserService {
         perfil: {
           nombre: true,
           foto_perfil: true,
+          genero: {
+            id_genero: true,
+            nombre: true,
+          },
         },
         isActive: true,
       },
@@ -39,7 +43,7 @@ export class UserService {
   async findOne(id: number) {
     const usuario = await this.usuarioRepository.findOne({
       where: { id_usuario: id },
-      relations: ['rol', 'perfil'],
+      relations: ['rol', 'perfil', 'perfil.genero'],
       select: {
         id_usuario: true,
         email: true,
@@ -47,6 +51,10 @@ export class UserService {
         perfil: {
           nombre: true,
           foto_perfil: true,
+          genero: {
+            id_genero: true,
+            nombre: true,
+          },
         },
       },
     });
