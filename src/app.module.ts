@@ -12,7 +12,7 @@ import { TagsModule } from './tags/tags.module';
 import { UserModule } from './users/user.module';
 import { SharedModule } from './shared/shared.module';
 import { GeneroModule } from './genero/genero.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { CloudinaryModule } from './upload/cloudinary.module';
 
 
 @Module({
