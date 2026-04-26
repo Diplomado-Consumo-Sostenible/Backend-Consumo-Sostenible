@@ -5,13 +5,16 @@ import {
   UploadedFile, 
   ParseFilePipe, 
   FileTypeValidator, 
-  BadRequestException 
+  BadRequestException, 
+  UseGuards
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudinaryService } from '../services/cloudinary.service';
+import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 
 
 @Controller('upload')
+@UseGuards(JwtAuthGuard)
 export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 

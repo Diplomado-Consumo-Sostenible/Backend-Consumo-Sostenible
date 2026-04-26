@@ -45,4 +45,23 @@ export class CloudinaryService {
       upload.end(file.buffer); 
     });
   }
+
+  async deleteImage(imageUrl: string): Promise<any> {
+    try {
+      const parts = imageUrl.split('/');
+      const filenameWithExt = parts.pop();
+      const folder = parts.pop();
+
+      if (!filenameWithExt || !folder) {
+        throw new Error('Invalid Cloudinary image URL');
+      }
+
+      const filename = filenameWithExt.split('.')[0];
+      const publicId = `${folder}/${filename}`;
+
+      return await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+      console.error('Error al intentar borrar la imagen de Cloudinary:', error);
+    }
+  }
 }
