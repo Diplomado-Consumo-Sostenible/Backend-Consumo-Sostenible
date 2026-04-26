@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, Param, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, UseGuards, ParseIntPipe, Query, Delete } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
@@ -74,5 +74,16 @@ export class PerfilController {
     @Body() dto: UpdatePerfilDto,
   ) {
     return this.perfilService.updateAsAdmin(id, dto);
+  }
+
+  @Delete(':id/foto')
+  @Roles('ADMIN') 
+  @ApiOperation({ summary: 'Eliminar la foto de un perfil por contenido inapropiado (Solo Admin)' })
+  @ApiResponse({ status: 200, description: 'Foto eliminada correctamente' })
+  @ApiResponse({ status: 404, description: 'Perfil no encontrado' })
+  deletePhotoAsAdmin(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.perfilService.deletePhotoAsAdmin(id);
   }
 }

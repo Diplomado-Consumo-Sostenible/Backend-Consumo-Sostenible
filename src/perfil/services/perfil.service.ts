@@ -7,11 +7,13 @@ import { createPaginationResponse } from 'src/common/pagination.helper';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { Perfil } from 'src/shared/entities/perfil.entity';
+import { CloudinaryService } from 'src/upload/services/cloudinary.service';
 
 @Injectable()
 export class PerfilService {
   constructor(
     private readonly perfilRepository: PerfilRepository,
+    private readonly cloudinaryService: CloudinaryService,
     private readonly generoRepository: GeneroRepository,
   ) {}
 
@@ -56,7 +58,15 @@ export class PerfilService {
   async updateMyPhoto(userId: number, dto: UpdateFotoDto) {
     const perfil = await this.findMyProfile(userId);
 
-    if (dto.foto_perfil) perfil.foto_perfil = dto.foto_perfil;
+    if (!dto.foto_perfil) {
+      throw new BadRequestException('La imagen de perfil es requerida.');
+    }
+
+    if (perfil.foto_perfil && perfil.foto_perfil !== dto.foto_perfil) {
+      await this.cloudinaryService.deleteImage(perfil.foto_perfil);
+    }
+
+    perfil.foto_perfil = dto.foto_perfil;
 
     await this.perfilRepository.save(perfil);
     return { message: 'Foto de perfil actualizada exitosamente', perfil };
@@ -118,5 +128,22 @@ export class PerfilService {
 
     await this.perfilRepository.save(perfil);
     return { message: 'Perfil actualizado por el administrador.', perfil };
+  }
+
+  async deletePhotoAsAdmin(id: number) {
+    const perfil = await this.findOne(id); 
+
+    if (!perfil.foto_perfil) {
+      throw new BadRequestException('Este perfil no tiene una foto asignada actualmente.');
+    }
+
+    perfil.foto_perfil = '';
+    
+    await this.perfilRepository.save(perfil);
+    
+    return { 
+      message: 'La foto de perfil ha sido eliminada por moderación (Admin).', 
+      perfil 
+    };
   }
 }
