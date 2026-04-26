@@ -29,6 +29,8 @@ export class PerfilService {
         id_perfil: true, 
         nombre: true, 
         foto_perfil: true, 
+        createdAt: true,
+        updatedAt: true,
         genero: { id_genero: true, nombre: true }, 
         user: { id_usuario: true, email: true } 
       },

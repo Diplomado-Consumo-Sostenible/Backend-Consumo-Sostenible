@@ -5,6 +5,8 @@ import {
   OneToOne,
   JoinColumn,
   ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Genero } from './genero.entity';
@@ -22,6 +24,13 @@ export class Perfil {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
+
 
   @OneToOne(() => User, (user) => user.perfil, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_usuario' })
