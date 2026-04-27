@@ -7,10 +7,12 @@ import {
   JoinTable,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
 import { Tag } from './tags.entity';
+import { Product } from './product.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -65,7 +67,6 @@ export class Business {
   xUrl: string;
 
   // --- HORARIOS ---
-  // Guardamos el horario estructurado en JSON (ej. { monday: "08:00-18:00", tuesday: ... })
   @Column('json', { nullable: true })
   schedule: Record<string, string>;
 
@@ -89,7 +90,7 @@ export class Business {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // --- RELACIONES ---
+
   @ManyToOne(() => User, (user) => user.business)
   user: User;
 
@@ -99,4 +100,7 @@ export class Business {
   @ManyToMany(() => Tag, (tag) => tag.business)
   @JoinTable()
   tags: Tag[];
+
+  @OneToMany(() => Product, (product) => product.business)
+  products: Product[];
 }
