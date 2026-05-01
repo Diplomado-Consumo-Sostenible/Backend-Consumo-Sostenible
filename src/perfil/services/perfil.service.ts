@@ -7,7 +7,7 @@ import { createPaginationResponse } from 'src/common/pagination.helper';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { Perfil } from 'src/shared/entities/perfil.entity';
-import { CloudinaryService } from 'src/upload/services/cloudinary.service';
+import { CloudinaryService } from 'src/shared/upload/services/cloudinary.service';
 
 @Injectable()
 export class PerfilService {

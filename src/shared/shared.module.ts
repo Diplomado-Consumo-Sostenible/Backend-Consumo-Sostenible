@@ -25,6 +25,8 @@ import { TagsRepository } from './repositories/tags.repository';
 import { PerfilRepository } from './repositories/perfil.repository';
 import { Product } from './entities/product.entity';
 import { ProductRepository } from './repositories/products.reposiroty';
+import { Certification } from './entities/certifications.entity';
+import { CertificationRepository } from './repositories/certifications.repository';
 
 @Module({})
 export class SharedModule {
@@ -79,6 +81,7 @@ export class SharedModule {
           Category,
           Tag,
           Product,
+          Certification,
         ]),
         MailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -102,6 +105,7 @@ export class SharedModule {
         CategoryRepository,
         TagsRepository,
         ProductRepository,
+        CertificationRepository,
       ],
       exports: [
         TypeOrmModule,
@@ -116,6 +120,7 @@ export class SharedModule {
         PassportModule,
         MailModule,
         ProductRepository,
+        CertificationRepository,
       ],
     };
   }
