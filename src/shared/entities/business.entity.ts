@@ -13,6 +13,7 @@ import { User } from './user.entity';
 import { Category } from './category.entity';
 import { Tag } from './tags.entity';
 import { Product } from './product.entity';
+import { Certification } from './certifications.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -103,4 +104,7 @@ export class Business {
 
   @OneToMany(() => Product, (product) => product.business)
   products: Product[];
+
+  @OneToMany(() => Certification, (certification) => certification.business)
+  certifications: Certification[];
 }

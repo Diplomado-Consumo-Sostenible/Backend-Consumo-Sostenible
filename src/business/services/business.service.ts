@@ -37,7 +37,7 @@ export class BusinessService {
 
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: { status: BusinessStatus.ACTIVE, isActive: true },
-      relations: ['category'],
+      relations: ['category', 'tags', 'certifications'],
       order: { createdAt: 'DESC' },
       skip: skip,
       take: limit,
@@ -57,7 +57,7 @@ export class BusinessService {
         status: BusinessStatus.ACTIVE,
         isActive: true,
       },
-      relations: ['category', 'tags'],
+      relations: ['category', 'tags', 'certifications'],
     });
 
     if (!business) {
@@ -76,13 +76,13 @@ export class BusinessService {
 
     if (roleName === 'admin') {
       return await this.businessRepository.find({
-        relations: ['category', 'tags', 'user'],
+        relations: ['category', 'tags', 'user', 'certifications'],
       });
     }
 
     return await this.businessRepository.find({
       where: { user: { id_usuario: user.id_usuario } },
-      relations: ['category', 'tags'],
+      relations: ['category', 'tags', 'certifications'],
     });
   }
 
@@ -103,7 +103,7 @@ export class BusinessService {
 
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: whereCondition,
-      relations: ['user', 'category', 'tags'],
+      relations: ['user', 'category', 'tags', 'certifications'],
       order: { createdAt: 'DESC' },
       skip,
       take: limit,

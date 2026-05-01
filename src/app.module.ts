@@ -12,8 +12,9 @@ import { TagsModule } from './tags/tags.module';
 import { UserModule } from './users/user.module';
 import { SharedModule } from './shared/shared.module';
 import { GeneroModule } from './genero/genero.module';
-import { CloudinaryModule } from './upload/cloudinary.module';
+import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { ProductModule } from './products/products.module';
+import { CertificationsModule } from './certifications/certifications.module';
 
 
 @Module({
@@ -34,6 +35,7 @@ import { ProductModule } from './products/products.module';
     SharedModule.forRoot(),
     CloudinaryModule,
     ProductModule,
+    CertificationsModule,
   ],
 
   controllers: [AppController],
