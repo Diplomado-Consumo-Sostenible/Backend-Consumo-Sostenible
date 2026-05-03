@@ -15,6 +15,7 @@ import { GeneroModule } from './genero/genero.module';
 import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { ProductModule } from './products/products.module';
 import { CertificationsModule } from './certifications/certifications.module';
+import { FollowModule } from './follow/follow.module';
 
 
 @Module({
@@ -36,6 +37,7 @@ import { CertificationsModule } from './certifications/certifications.module';
     CloudinaryModule,
     ProductModule,
     CertificationsModule,
+    FollowModule,
   ],
 
   controllers: [AppController],

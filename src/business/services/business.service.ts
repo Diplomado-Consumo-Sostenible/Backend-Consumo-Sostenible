@@ -19,6 +19,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
+import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
 
 
 @Injectable()
@@ -31,12 +32,25 @@ export class BusinessService {
   ) {}
 
   //Metodos publicos
-  async findAllPublic(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async findAllPublic(filterDto: PublicBusinessFilterDto) {
+    const { page = 1, limit = 10, id_category, id_tag } = filterDto;
     const skip = (page - 1) * limit;
 
+    const whereConditions: FindOptionsWhere<Business> = {
+      status: BusinessStatus.ACTIVE,
+      isActive: true,
+    };
+    
+    if (id_category) {
+      whereConditions.category = { id_category };
+    }
+
+    if (id_tag) {
+      whereConditions.tags = { id_tags: id_tag };
+    }
+
     const [businesses, total] = await this.businessRepository.findAndCount({
-      where: { status: BusinessStatus.ACTIVE, isActive: true },
+      where: whereConditions,
       relations: ['category', 'tags', 'certifications'],
       order: { createdAt: 'DESC' },
       skip: skip,
@@ -89,7 +103,7 @@ export class BusinessService {
 
   async findAllForAdmin(filters: GetBusinessesFilterDto) {
     
-    const { status, isActive, page = 1, limit = 10 } = filters;
+    const { status, isActive, id_category, id_tag, page = 1, limit = 10 } = filters;
     const skip = (page - 1) * limit;
     const whereCondition: FindOptionsWhere<Business> = {};
 
@@ -99,6 +113,14 @@ export class BusinessService {
 
     if (isActive !== undefined) {
       whereCondition.isActive = isActive === 'true';
+    }
+
+    if (id_category) {
+      whereCondition.category = { id_category };
+    }
+
+    if (id_tag) {
+      whereCondition.tags = { id_tags: id_tag };
     }
 
     const [businesses, total] = await this.businessRepository.findAndCount({

@@ -21,6 +21,7 @@ import { BusinessStatus } from '../../shared/entities/business.entity';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
 
 @ApiTags('business')
 @ApiBearerAuth()
@@ -33,8 +34,8 @@ export class BusinessController {
   @ApiOperation({ summary: 'Listar todos los negocios (Público)' })
   @ApiResponse({ status: 200, description: 'Lista de negocios disponibles' })
   @ApiResponse({ status: 404, description: 'No hay negocios disponibles' })
-  findAllPublic(@Query() paginationDto: PaginationDto) {
-    return this.businessService.findAllPublic(paginationDto);
+  findAllPublic(@Query() filterDto: PublicBusinessFilterDto) {
+    return this.businessService.findAllPublic(filterDto);
   }
 
   @Get('admin/list')
