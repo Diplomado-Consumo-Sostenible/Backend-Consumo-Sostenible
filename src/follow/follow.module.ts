@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { FollowController } from './follow.controller';
+import { FollowController } from './controllers/follow.controller';
+import { FollowService } from './services/follow.service';
 
 @Module({
-  controllers: [FollowController]
+  controllers: [FollowController],
+  providers: [FollowService]
 })
 export class FollowModule {}
