@@ -1,9 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsNumber } from 'class-validator';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 export class PublicBusinessFilterDto extends PaginationDto {
+
+  @ApiPropertyOptional({ description: 'Buscar negocio por nombre' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiPropertyOptional({ description: 'ID de la categoría para filtrar' })
   @IsOptional()
   @Type(() => Number) 

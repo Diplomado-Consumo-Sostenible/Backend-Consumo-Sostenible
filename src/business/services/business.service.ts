@@ -12,7 +12,7 @@ import { UpdateBusinessDto } from '../dto/update-business.dto';
 import { User } from 'src/shared/entities/user.entity';
 import { Tag } from '../../shared/entities/tags.entity';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, ILike } from 'typeorm';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
 import { createPaginationResponse } from '../../common/pagination.helper';
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -33,14 +33,17 @@ export class BusinessService {
 
   //Metodos publicos
   async findAllPublic(filterDto: PublicBusinessFilterDto) {
-    const { page = 1, limit = 10, id_category, id_tag } = filterDto;
+    const { page = 1, limit = 10, id_category, id_tag, search } = filterDto;
     const skip = (page - 1) * limit;
 
     const whereConditions: FindOptionsWhere<Business> = {
       status: BusinessStatus.ACTIVE,
       isActive: true,
     };
-    
+    if (search) {
+      whereConditions.businessName = ILike(`%${search}%`); 
+    }
+
     if (id_category) {
       whereConditions.category = { id_category };
     }
@@ -103,7 +106,7 @@ export class BusinessService {
 
   async findAllForAdmin(filters: GetBusinessesFilterDto) {
     
-    const { status, isActive, id_category, id_tag, page = 1, limit = 10 } = filters;
+    const { status, isActive, id_category, id_tag, search, page = 1, limit = 10 } = filters;
     const skip = (page - 1) * limit;
     const whereCondition: FindOptionsWhere<Business> = {};
 
@@ -113,6 +116,10 @@ export class BusinessService {
 
     if (isActive !== undefined) {
       whereCondition.isActive = isActive === 'true';
+    }
+
+    if (search) {
+      whereCondition.businessName = ILike(`%${search}%`); 
     }
 
     if (id_category) {

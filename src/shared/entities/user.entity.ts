@@ -1,6 +1,7 @@
 import { Business } from './business.entity';
 import { Perfil } from './perfil.entity';
 import { Rol } from './rol.entity';
+import { Follow } from './follow.entity';
 import {
   Column,
   Entity,
@@ -45,5 +46,10 @@ export class User {
   perfil: Perfil;
 
   @OneToMany(() => Business, (business) => business.user)
-  business: Business;
+  business: Business[];
+
+  @OneToMany(() => Follow, (follow) => follow.follower)
+  following: Follow[];
+
 }
+

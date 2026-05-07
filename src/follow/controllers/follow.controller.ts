@@ -46,7 +46,7 @@ export class FollowsController {
   }
 
   @Get('my-following')
-  @ApiOperation({ summary: 'Listar los negocios que sigo' })
+  @ApiOperation({ summary: 'Listar los negocios que sigo (con categoría y tags)' })
   getFollowing(
     @CurrentUser() user: any,
     @Query() paginationDto: PaginationDto,
@@ -54,17 +54,27 @@ export class FollowsController {
     return this.followsService.getFollowing(user, paginationDto);
   }
 
-  // --- RUTAS PARA DUEÑOS (OWNERS) ---
 
-  @Get('business/:businessId/followers')
+  @Get('management/my-followers')
   @UseGuards(RolesGuard)
-  @Roles('owner', 'ADMIN')
-  @ApiOperation({ summary: 'Listar los seguidores de mi negocio (Owner/Admin)' })
-  getBusinessFollowers(
-    @Param('businessId', ParseIntPipe) businessId: number,
+  @Roles('owner')
+  @ApiOperation({ summary: 'Listar los seguidores de mi negocio (Solo Owner)' })
+  getMyBusinessFollowers(
     @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto, // Solo recibe el paginador, no el ID
+  ) {
+    return this.followsService.getMyBusinessFollowers(user, paginationDto);
+  }
+
+
+  @Get('admin/business/:businessId/followers')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Ver seguidores de cualquier negocio (Solo Admin)' })
+  getBusinessFollowersForAdmin(
+    @Param('businessId', ParseIntPipe) businessId: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.followsService.getBusinessFollowers(businessId, user, paginationDto);
+    return this.followsService.getBusinessFollowersForAdmin(businessId, paginationDto);
   }
 }
