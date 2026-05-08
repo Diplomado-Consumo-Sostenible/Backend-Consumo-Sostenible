@@ -14,6 +14,7 @@ import { Category } from './category.entity';
 import { Tag } from './tags.entity';
 import { Product } from './product.entity';
 import { Certification } from './certifications.entity';
+import { Follow } from './follow.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -91,9 +92,14 @@ export class Business {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @Column({ default: 0 })
+  followers_count: number;
 
   @ManyToOne(() => User, (user) => user.business)
   user: User;
+
+  @OneToMany(() => Follow, (follow) => follow.followedBusiness)
+  followers: Follow[];
 
   @ManyToOne(() => Category, (category) => category.businesses)
   category: Category;

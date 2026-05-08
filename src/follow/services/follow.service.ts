@@ -10,6 +10,8 @@ import { BusinessStatus } from 'src/shared/entities/business.entity';
 import { FollowRepository } from 'src/shared/repositories/follow.repository';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { createPaginationResponse } from 'src/common/pagination.helper';
+import { TagsRepository } from 'src/shared/repositories/tags.repository';
+import { CategoryRepository } from 'src/shared/repositories/category.repository';
 
 
 @Injectable()
@@ -17,6 +19,8 @@ export class FollowsService {
   constructor(
     private readonly followRepository: FollowRepository,
     private readonly businessRepository: BusinessRepository,
+    private readonly categoryRepository: CategoryRepository,
+    private readonly tagRepository: TagsRepository,
   ) {}
 
   async followBusiness(businessId: number, user: any) {
@@ -76,7 +80,9 @@ export class FollowsService {
 
     const [follows, total] = await this.followRepository.findAndCount({
       where: { follower: { id_usuario: user.id_usuario } },
-      relations: ['followedBusiness'],
+      relations: ['followedBusiness', 
+        'followedBusiness.category', 
+        'followedBusiness.tags'],
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
@@ -91,32 +97,54 @@ export class FollowsService {
     return createPaginationResponse(businesses, total, page, limit);
   }
 
-  async getBusinessFollowers(businessId: number, user: any, paginationDto: PaginationDto) {
+  async getMyBusinessFollowers(user: any, paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
-
     const business = await this.businessRepository.findOne({
-      where: { id_business: businessId },
-      relations: ['user'],
+      where: { user: { id_usuario: user.id_usuario } },
     });
 
-    if (!business) throw new NotFoundException('Negocio no encontrado');
-    
-    if (business.user.id_usuario !== user.id_usuario && user.rol.nombre !== 'admin') {
-      throw new ForbiddenException('No tienes permiso para ver los seguidores de este negocio.');
+    if (!business) {
+      throw new NotFoundException('No tienes un negocio registrado para ver seguidores.');
     }
 
     const [follows, total] = await this.followRepository.findAndCount({
-      where: { followedBusiness: { id_business: businessId } },
-      relations: ['follower', 'follower.perfil'],
+      where: { followedBusiness: { id_business: business.id_business } },
+      relations: ['follower', 'follower.perfil'], 
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
     });
 
     if (total === 0) {
-      throw new NotFoundException('Este negocio aún no tiene seguidores.');
+      throw new NotFoundException('Aún no tienes seguidores.');
+    }
+
+    const followers = follows.map(f => ({
+      id_usuario: f.follower.id_usuario,
+      fecha_seguimiento: f.createdAt,
+      perfil: f.follower.perfil 
+    }));
+
+    return createPaginationResponse(followers, total, page, limit);
+  }
+
+
+  async getBusinessFollowersForAdmin(businessId: number, paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [follows, total] = await this.followRepository.findAndCount({
+      where: { followedBusiness: { id_business: businessId } },
+      relations: ['follower', 'follower.perfil'], 
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    if (total === 0) {
+      throw new NotFoundException('Este negocio no tiene seguidores.');
     }
 
     const followers = follows.map(f => ({
