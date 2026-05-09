@@ -1,7 +1,7 @@
 import { ApiPropertyOptional, IntersectionType } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsBooleanString } from 'class-validator';
 import { BusinessStatus } from '../../shared/entities/business.entity';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { PublicBusinessFilterDto } from './public-business-filter.dto';
 
 export class GetBusinessesFilterDto extends IntersectionType(PaginationDto, PublicBusinessFilterDto) {

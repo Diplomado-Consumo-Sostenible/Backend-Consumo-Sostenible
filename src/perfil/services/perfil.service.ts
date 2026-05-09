@@ -3,7 +3,7 @@ import { PerfilRepository } from 'src/shared/repositories/perfil.repository';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { UpdatePerfilDto } from '../dto/update-perfil.dto';
 import { UpdateFotoDto } from '../dto/update-foto.dto';
-import { createPaginationResponse } from 'src/common/pagination.helper';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { Perfil } from 'src/shared/entities/perfil.entity';

@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { In} from 'typeorm';
+import { In, MoreThanOrEqual} from 'typeorm';
 import { Business, BusinessStatus } from '../../shared/entities/business.entity';
 import { CreateBusinessDto } from '../dto/create-business.dto';
 import { UpdateBusinessDto } from '../dto/update-business.dto';
@@ -14,8 +14,8 @@ import { Tag } from '../../shared/entities/tags.entity';
 import { MailService } from 'src/mail/mail.service';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
-import { createPaginationResponse } from '../../common/pagination.helper';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
+import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
@@ -84,6 +84,28 @@ export class BusinessService {
     }
 
     return business;
+  }
+
+  async getTopBusinesses() {
+    const businesses = await this.businessRepository.find({
+      where: {
+        status: BusinessStatus.ACTIVE,
+        isActive: true,
+        total_reviews: MoreThanOrEqual(1),
+      },
+      relations: ['category', 'tags', 'certifications'],
+      order: { 
+        average_rating: 'DESC',
+        total_reviews: 'DESC'
+      },
+      take: 5,
+    });
+
+    if (businesses.length === 0) {
+      throw new NotFoundException('Aún no hay negocios calificados para mostrar.');
+    }
+
+    return businesses;
   }
 
   //Metodos gestion interna

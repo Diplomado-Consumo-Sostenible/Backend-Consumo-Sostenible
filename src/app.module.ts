@@ -16,6 +16,7 @@ import { CloudinaryModule } from './shared/upload/cloudinary.module';
 import { ProductModule } from './products/products.module';
 import { CertificationsModule } from './certifications/certifications.module';
 import { FollowModule } from './follow/follow.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 
 @Module({
@@ -38,6 +39,7 @@ import { FollowModule } from './follow/follow.module';
     ProductModule,
     CertificationsModule,
     FollowModule,
+    ReviewsModule,
   ],
 
   controllers: [AppController],

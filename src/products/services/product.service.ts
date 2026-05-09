@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
-import { createPaginationResponse } from '../../common/pagination.helper';
+import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
+import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
 import { ProductRepository } from 'src/shared/repositories/products.reposiroty';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 

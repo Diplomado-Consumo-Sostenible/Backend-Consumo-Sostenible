@@ -14,7 +14,7 @@ import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
 @ApiTags('follows')
 @ApiBearerAuth()

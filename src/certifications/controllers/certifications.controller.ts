@@ -20,7 +20,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiBody } from '@nes
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { CertificationsService } from '../services/certifications.service';
 import { GetCertificationsFilterDto } from '../dto/get-certifications-filter.dto';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
 @ApiTags('certifications')
 @Controller('certifications')
