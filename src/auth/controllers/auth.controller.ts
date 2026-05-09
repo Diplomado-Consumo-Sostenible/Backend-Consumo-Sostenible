@@ -6,8 +6,8 @@ import { LoginDto } from '../dto/login.dto';
 import { RequestPasswordResetDto } from 'src/mail/dto/request-password-reset.dto';
 import { ResendPasswordResetDto } from 'src/mail/dto/resend-password-reset.dto';
 import { ResetPasswordDto } from 'src/mail/dto/reset-password.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
+import { GoogleAuthGuard } from '../jwt-auth/google-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -19,14 +19,14 @@ export class AuthController {
 
   
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   async googleAuth(@Req() req) {
   }
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   async googleAuthRedirect(@Req() req, @Res() res) {
-    const rolId = req.query.rolId ? Number(req.query.rolId) : 2;
+    const rolId = req.query.state ? Number(req.query.state) : 2;
     const tokenResponse = await this.authService.googleLogin(req.user, rolId);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
   
