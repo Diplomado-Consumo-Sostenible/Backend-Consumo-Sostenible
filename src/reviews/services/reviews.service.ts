@@ -88,7 +88,7 @@ export class ReviewsService {
       .createQueryBuilder('review')
       .innerJoinAndSelect('review.user', 'user')
       .leftJoinAndSelect('user.perfil', 'perfil')
-      .where('review.business = :businessId', { id_business: businessId })
+      .where('review.business = :businessId', { businessId })
       .andWhere('user.isActive = true');
 
     if (rating) {
