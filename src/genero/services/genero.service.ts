@@ -6,8 +6,8 @@ import {
 import { Genero } from '../../shared/entities/genero.entity';
 import { CreateGeneroDto } from '../dto/create-genero.dto';
 import { UpdateGeneroDto } from '../dto/Update-genero.dto';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { createPaginationResponse, PaginationResult } from 'src/common/pagination.helper';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+import { createPaginationResponse, PaginationResult } from 'src/shared/pagination/pagination.helper';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 
 @Injectable()

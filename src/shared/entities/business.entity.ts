@@ -15,6 +15,7 @@ import { Tag } from './tags.entity';
 import { Product } from './product.entity';
 import { Certification } from './certifications.entity';
 import { Follow } from './follow.entity';
+import { Review } from './review.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -95,6 +96,18 @@ export class Business {
   @Column({ default: 0 })
   followers_count: number;
 
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
+  average_rating: number;
+
+  @Column({ default: 0 })
+  total_reviews: number;
+
+  @Column({ type: 'text', nullable: true })
+  ai_reviews_summary: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  ai_summary_updated_at: Date | null;
+
   @ManyToOne(() => User, (user) => user.business)
   user: User;
 
@@ -113,4 +126,7 @@ export class Business {
 
   @OneToMany(() => Certification, (certification) => certification.business)
   certifications: Certification[];
+
+  @OneToMany(() => Review, (review) => review.business)
+  reviews: Review[];
 }

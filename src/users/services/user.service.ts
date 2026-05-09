@@ -9,6 +9,7 @@ import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
+import { ReviewRepository } from 'src/shared/repositories/review.repository';
 
 @Injectable()
 export class UserService {
@@ -18,7 +19,27 @@ export class UserService {
     private readonly rolRepository: RolRepository,
     private readonly generoRepository: GeneroRepository,
     private readonly businessRepository: BusinessRepository,
+    private readonly reviewRepository: ReviewRepository,
   ) {}
+
+  private async recalculateBusinessRating(businessId: number) {
+    const result = await this.reviewRepository
+      .createQueryBuilder('review')
+      .innerJoin('review.user', 'user')
+      .select('AVG(review.rating)', 'avg')
+      .addSelect('COUNT(review.id_review)', 'count')
+      .where('review.businessId = :businessId', { businessId })
+      .andWhere('user.isActive = true')
+      .getRawOne();
+
+    const newAvg = result.avg ? parseFloat(result.avg) : 0;
+    const newCount = result.count ? parseInt(result.count, 10) : 0;
+
+    await this.businessRepository.update(businessId, {
+      average_rating: Number(newAvg.toFixed(2)),
+      total_reviews: newCount,
+    });
+  }
 
   async findAll() {
     return this.usuarioRepository.find({
@@ -76,6 +97,17 @@ export class UserService {
     if (usuario.perfil) {
       usuario.perfil.isActive = isActive;
       await this.perfilRepository.save(usuario.perfil);
+    }
+
+    const userReviews = await this.reviewRepository.find({
+      where: { user: { id_usuario: id } },
+      relations: ['business'],
+    });
+
+    const affectedBusinessIds = [...new Set(userReviews.map(r => r.business.id_business))];
+
+    for (const businessId of affectedBusinessIds) {
+      await this.recalculateBusinessRating(businessId);
     }
 
     return {
@@ -179,6 +211,12 @@ export class UserService {
 
     if (!userToDelete) throw new NotFoundException('Usuario no encontrado.');
 
+    const userReviews = await this.reviewRepository.find({
+      where: { user: { id_usuario: id } },
+      relations: ['business'],
+    });
+    const affectedBusinessIds = [...new Set(userReviews.map(r => r.business.id_business))];
+
     if (userToDelete.business) {
       if (Array.isArray(userToDelete.business)) {
         if (userToDelete.business.length > 0) {
@@ -193,8 +231,11 @@ export class UserService {
       await this.perfilRepository.remove(userToDelete.perfil);
     }
 
-
     await this.usuarioRepository.remove(userToDelete);
+
+    for (const businessId of affectedBusinessIds) {
+      await this.recalculateBusinessRating(businessId);
+    }
 
     return { message: `El usuario con ID ${id} y todos sus negocios han sido eliminados permanentemente.` };
   }

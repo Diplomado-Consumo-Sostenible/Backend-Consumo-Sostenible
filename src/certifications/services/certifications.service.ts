@@ -8,10 +8,10 @@ import { Certification, CertificationStatus } from 'src/shared/entities/certific
 import { CreateCertificationDto } from '../dto/create-certification.dto';
 import { CertificationRepository } from 'src/shared/repositories/certifications.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
-import { createPaginationResponse } from 'src/common/pagination.helper';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 import { GetCertificationsFilterDto } from '../dto/get-certifications-filter.dto';
 import { FindOptionsWhere } from 'typeorm';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
 
 @Injectable()

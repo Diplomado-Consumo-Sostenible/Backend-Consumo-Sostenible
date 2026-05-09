@@ -8,8 +8,8 @@ import {
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { BusinessStatus } from 'src/shared/entities/business.entity';
 import { FollowRepository } from 'src/shared/repositories/follow.repository';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
-import { createPaginationResponse } from 'src/common/pagination.helper';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
 

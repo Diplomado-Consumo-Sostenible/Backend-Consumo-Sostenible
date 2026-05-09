@@ -29,6 +29,8 @@ import { Certification } from './entities/certifications.entity';
 import { CertificationRepository } from './repositories/certifications.repository';
 import { FollowRepository } from './repositories/follow.repository';
 import { Follow } from './entities/follow.entity';
+import { Review } from './entities/review.entity';
+import { ReviewRepository } from './repositories/review.repository';
 
 @Module({})
 export class SharedModule {
@@ -85,6 +87,7 @@ export class SharedModule {
           Product,
           Certification,
           Follow,
+          Review,
         ]),
         MailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -110,6 +113,7 @@ export class SharedModule {
         ProductRepository,
         CertificationRepository,
         FollowRepository,
+        ReviewRepository,
       ],
       exports: [
         TypeOrmModule,
@@ -126,6 +130,7 @@ export class SharedModule {
         ProductRepository,
         CertificationRepository,
         FollowRepository,
+        ReviewRepository,
       ],
     };
   }

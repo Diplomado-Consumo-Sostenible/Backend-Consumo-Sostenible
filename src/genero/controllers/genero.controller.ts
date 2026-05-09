@@ -14,7 +14,7 @@ import {
 import { GeneroService } from '../services/genero.service';
 import { CreateGeneroDto } from '../dto/create-genero.dto';
 import { UpdateGeneroDto } from '../dto/Update-genero.dto';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';

@@ -13,6 +13,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { Review } from './review.entity';
 
 @Entity('user')
 export class User {
@@ -50,6 +51,9 @@ export class User {
 
   @OneToMany(() => Follow, (follow) => follow.follower)
   following: Follow[];
+
+  @OneToMany(() => Review, (review) => review.user)
+  reviews: Review[];
 
 }
 

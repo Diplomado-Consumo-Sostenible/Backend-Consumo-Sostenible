@@ -20,7 +20,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiBody } from '@nes
 import { BusinessStatus } from '../../shared/entities/business.entity';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
 
 @ApiTags('business')
@@ -36,6 +36,13 @@ export class BusinessController {
   @ApiResponse({ status: 404, description: 'No hay negocios disponibles' })
   findAllPublic(@Query() filterDto: PublicBusinessFilterDto) {
     return this.businessService.findAllPublic(filterDto);
+  }
+
+  @Get('top')
+  @ApiOperation({ summary: 'Obtener los 5 negocios con mejor calificación (Público)' })
+  @ApiResponse({ status: 200, description: 'Retorna los 5 mejores negocios' })
+  getTopBusinesses() {
+    return this.businessService.getTopBusinesses();
   }
 
   @Get('admin/list')
