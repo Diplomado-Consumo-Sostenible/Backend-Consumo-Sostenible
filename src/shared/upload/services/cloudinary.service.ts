@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 
+
 @Injectable()
 export class CloudinaryService {
   constructor() {
@@ -63,5 +64,22 @@ export class CloudinaryService {
     } catch (error) {
       console.error('Error al intentar borrar la imagen de Cloudinary:', error);
     }
+  }
+
+
+  async uploadDocument(file: Express.Multer.File): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        { 
+          folder: 'ecovida_documentos', 
+          resource_type: 'image', 
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+      upload.end(file.buffer); 
+    });
   }
 }

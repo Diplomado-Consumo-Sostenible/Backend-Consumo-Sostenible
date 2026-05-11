@@ -15,11 +15,11 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 
 @Controller('upload')
-@UseGuards(JwtAuthGuard)
 export class UploadController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Subir imagen de perfil con recorte automático 400*400' })
   @ApiResponse({ status: 201, description: 'Imagen de perfil cargada exitosamente' })
   @UseInterceptors(FileInterceptor('imagen')) 
@@ -52,6 +52,7 @@ export class UploadController {
   
 
   @Post('general')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Subir imágenes generales (negocios, productos, certificaciones) sin recorte forzado' })
   @ApiResponse({ status: 201, description: 'Imagen cargada exitosamente' })
   @UseInterceptors(FileInterceptor('imagen'))
@@ -77,6 +78,37 @@ export class UploadController {
     } catch (error) {
       console.error(error);
       throw new BadRequestException('Hubo un problema al subir la imagen a Cloudinary');
+    }
+  }
+
+  @Post('upload-document')
+  @UseInterceptors(FileInterceptor('file', {
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(new BadRequestException('Formato inválido. Solo se permiten archivos PDF.'), false);
+      }
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024, 
+    }
+  }))
+  async uploadValidationDocument(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('El archivo PDF es requerido.');
+    }
+
+    try {
+
+      const result = await this.cloudinaryService.uploadDocument(file);
+
+      return {
+        message: 'Documento de validación subido con éxito',
+        url: result.secure_url
+      };
+    } catch (error) {
+      throw new BadRequestException('Error al subir el archivo a Cloudinary');
     }
   }
 }

@@ -73,6 +73,14 @@ export class Business {
   @Column('json', { nullable: true })
   schedule: Record<string, string>;
 
+  // --- VERIFICACIÓN LEGAL ---
+  @Column({ nullable: true })
+  legal_document_url: string;
+
+ 
+  @Column({ default: false })
+  is_legally_verified: boolean;
+
   // --- ESTADOS Y CONTROL ---
   @Column({
     type: 'enum',

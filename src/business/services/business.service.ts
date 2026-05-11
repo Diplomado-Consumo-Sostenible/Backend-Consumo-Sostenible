@@ -4,8 +4,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
-import { In, MoreThanOrEqual} from 'typeorm';
+import { In, MoreThanOrEqual, Not} from 'typeorm';
 import { Business, BusinessStatus } from '../../shared/entities/business.entity';
 import { CreateBusinessDto } from '../dto/create-business.dto';
 import { UpdateBusinessDto } from '../dto/update-business.dto';
@@ -20,6 +21,8 @@ import { BusinessRepository } from 'src/shared/repositories/business.repository'
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
 import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
+import { RolRepository } from 'src/shared/repositories/rol.repository';
+import { UserRepository } from 'src/shared/repositories/user.repository';
 
 
 @Injectable()
@@ -29,7 +32,14 @@ export class BusinessService {
     private readonly categoryRepository: CategoryRepository,
     private readonly tagRepository: TagsRepository,
     private readonly mailService: MailService,
+    private readonly userRepository: UserRepository,
+    private readonly roleRepository: RolRepository,
   ) {}
+
+  private sanitizePublicBusiness(business: Business) {
+    const { legal_document_url, ...rest } = business;
+    return rest as Business;
+  }
 
   //Metodos publicos
   async findAllPublic(filterDto: PublicBusinessFilterDto) {
@@ -64,7 +74,8 @@ export class BusinessService {
       throw new NotFoundException('No hay negocios disponibles en este momento.');
     }
 
-    return createPaginationResponse(businesses, total, page, limit);
+    const sanitizedBusinesses = businesses.map(b => this.sanitizePublicBusiness(b));
+    return createPaginationResponse(sanitizedBusinesses, total, page, limit);
   }
 
   async findOnePublic(id: number) {
@@ -83,7 +94,7 @@ export class BusinessService {
       );
     }
 
-    return business;
+    return this.sanitizePublicBusiness(business);
   }
 
   async getTopBusinesses() {
@@ -105,7 +116,7 @@ export class BusinessService {
       throw new NotFoundException('Aún no hay negocios calificados para mostrar.');
     }
 
-    return businesses;
+    return businesses.map(b => this.sanitizePublicBusiness(b));
   }
 
   //Metodos gestion interna
@@ -189,6 +200,13 @@ export class BusinessService {
           'Solo puedes tener un negocio a la vez. Si tu negocio fue desactivado, no puedes crear uno nuevo.',
         );
       }
+      
+      const nameExists = await this.businessRepository.findOne({
+        where: { businessName: ILike(createBusinessDto.businessName) }
+      });
+      if (nameExists) {
+        throw new ConflictException(`El nombre '${createBusinessDto.businessName}' ya está registrado por otro negocio.`);
+      }
 
       const { categoryId, tagIds, ...businessData } = createBusinessDto;
 
@@ -204,7 +222,7 @@ export class BusinessService {
 
       const newBusiness = this.businessRepository.create({
         ...businessData,
-        user,
+        user: user,
         category,
         tags,
         status: BusinessStatus.PENDING,
@@ -212,11 +230,18 @@ export class BusinessService {
     );
       
       const savedBusiness = await this.businessRepository.save(newBusiness);
+      if (user.rol.nombre === 'USER') {
+        const ownerRole = await this.roleRepository.findOne({ where: { nombre: 'owner' } });
+        
+        if (ownerRole) {
+           await this.userRepository.update(user.id_usuario, { rol: ownerRole });
+        }
+      }
       await this.mailService.sendBusinessWelcome(user.email, savedBusiness.businessName);
       return { message: 'Negocio ' + savedBusiness.businessName + ' creado exitosamente y pendiente de revisión por un administrador' };
 
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
+      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof ConflictException) throw error;
       throw new InternalServerErrorException(
         `Error al crear negocio: ${error.message}`,
       );
@@ -245,6 +270,20 @@ export class BusinessService {
       );
     }
 
+    const { categoryId, tagIds, ...businessData } = updateBusinessDto as any;
+
+    if (businessData.businessName) {
+      const nameExists = await this.businessRepository.findOne({
+        where: { 
+          businessName: ILike(businessData.businessName),
+          id_business: Not(id)
+        }
+      });
+      if (nameExists) {
+        throw new ConflictException(`El nombre '${businessData.businessName}' ya está registrado por otro negocio.`);
+      }
+    }
+
     let wasResubmitted = false;
 
     if (roleName !== 'admin' && business.status === BusinessStatus.REJECTED) {
@@ -252,7 +291,6 @@ export class BusinessService {
       business.rejectionReason = null; 
       wasResubmitted = true;
     }
-    const { categoryId, tagIds, ...businessData } = updateBusinessDto as any;
 
     if (categoryId) {
       const category = await this.categoryRepository.findOneBy({

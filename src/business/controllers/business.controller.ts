@@ -84,12 +84,8 @@ export class BusinessController {
   @ApiBearerAuth()
   @ApiResponse({ status: 201, description: 'Negocio creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos para crear negocio' })
-  @ApiResponse({
-    status: 403,
-    description: 'Prohibido. Requiere rol de owner o admin.',
-  })
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('owner', 'ADMIN')
+  @Roles('USER','owner', 'ADMIN')
   @ApiOperation({ summary: 'Crear un negocio (Owner/Admin)' })
   create(
     @Body() createBusinessDto: CreateBusinessDto,
