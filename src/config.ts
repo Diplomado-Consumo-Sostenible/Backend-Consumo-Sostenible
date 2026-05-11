@@ -46,13 +46,16 @@ export const config = async () => {
       port: parseInt(process.env.MAIL_PORT as string, 10) || 587,
       user: process.env.MAIL_USER || '',
       password: process.env.MAIL_PASSWORD || '',
-      sender: process.env.MAIL_SENDER || 'noreply@samawe.com',
+      sender: process.env.MAIL_SENDER || 'ecovidasupport@gmail.com',
       secure: process.env.MAIL_SECURE === 'true',
     },
     cloudinary: {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME || 'default-cloud-name',
       apiKey: process.env.CLOUDINARY_API_KEY || 'default-api-key',
       apiSecret: process.env.CLOUDINARY_API_SECRET || 'default-api-secret',
+    },
+    ai: {
+      url: process.env.AI_API_URL,
     },
   };
 };

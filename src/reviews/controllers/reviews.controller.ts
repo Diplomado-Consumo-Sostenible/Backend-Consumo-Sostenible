@@ -18,6 +18,8 @@ import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { UpdateReviewDto } from '../dto/update-review.dto';
 import { GetBusinessReviewsFilterDto } from '../dto/get-business-reviews-filter.dto';
+import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
+import { Roles } from 'src/auth/decorator/roles.decorator';
 
 @ApiTags('reviews')
 @Controller('reviews')
@@ -49,6 +51,18 @@ export class ReviewsController {
     return this.reviewsService.getMyReviews(user, paginationDto);
   }
 
+  @Get('suspicious')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN') 
+  @ApiOperation({ summary: 'Ver reseñas sospechosas' })
+  getSuspiciousReviews(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.reviewsService.getSuspiciousReviews(paginationDto);
+  }
+  
   @Get('business/:businessId')
   @ApiOperation({ summary: 'Listar las reseñas de un negocio con paginación (Público)' })
   getBusinessReviews(

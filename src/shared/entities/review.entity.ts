@@ -26,6 +26,9 @@ export class Review {
         default: ReviewSentiment.NEUTRAL,
     })
     sentiment: ReviewSentiment;
+
+    @Column({ default: false })
+    is_suspicious: boolean;
     
     @CreateDateColumn({ type: 'timestamptz' })
     created_at: Date;
