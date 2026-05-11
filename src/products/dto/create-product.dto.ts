@@ -18,6 +18,13 @@ export class CreateProductDto {
   @IsString()
   description: string;
 
+  @ApiProperty({
+    description: 'Precio del producto en formato decimal',
+    example: 9.99,
+  })
+  @IsNotEmpty() 
+  price: number;
+
   @ApiPropertyOptional({
     description: 'URL de la imagen del producto (Cloudinary/S3)',
     example: 'https://res.cloudinary.com/tu-app/image/upload/v1/producto.png',

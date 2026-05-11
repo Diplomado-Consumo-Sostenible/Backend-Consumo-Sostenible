@@ -20,6 +20,9 @@ export class Product {
   @Column({ type: 'text' })
   description: string;
 
+  @Column('decimal', { precision: 10, scale: 2 , default: 0 })
+  price: number;
+
   @Column({ nullable: true })
   image: string;
 
