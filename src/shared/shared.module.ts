@@ -31,6 +31,7 @@ import { FollowRepository } from './repositories/follow.repository';
 import { Follow } from './entities/follow.entity';
 import { Review } from './entities/review.entity';
 import { ReviewRepository } from './repositories/review.repository';
+import { AiService } from './ai/ai.service';
 
 @Module({})
 export class SharedModule {
@@ -114,6 +115,7 @@ export class SharedModule {
         CertificationRepository,
         FollowRepository,
         ReviewRepository,
+        AiService,
       ],
       exports: [
         TypeOrmModule,
@@ -131,6 +133,7 @@ export class SharedModule {
         CertificationRepository,
         FollowRepository,
         ReviewRepository,
+        AiService,
       ],
     };
   }

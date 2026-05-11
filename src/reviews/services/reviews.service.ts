@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { BusinessStatus } from '../../shared/entities/business.entity';
 import { CreateReviewDto } from '../dto/create-review.dto';
@@ -13,14 +14,22 @@ import { ReviewRepository } from 'src/shared/repositories/review.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { UpdateReviewDto } from '../dto/update-review.dto';
 import { GetBusinessReviewsFilterDto, SortOrder } from '../dto/get-business-reviews-filter.dto';
+import { AiService } from 'src/shared/ai/ai.service';
+import { MailService } from 'src/mail/mail.service';
+import { ReviewSentiment } from '../../shared/entities/review.entity';
 
 @Injectable()
 export class ReviewsService {
+  private readonly logger = new Logger(ReviewsService.name);
+
   constructor(
     private readonly reviewRepository: ReviewRepository,
     private readonly businessRepository: BusinessRepository,
+    private readonly aiService: AiService,
+    private readonly mailService: MailService,
   ) {}
 
+  // --- 1. ACTUALIZAR PROMEDIO DEL NEGOCIO ---
   private async updateBusinessRating(businessId: number) {
     const result = await this.reviewRepository
       .createQueryBuilder('review')
@@ -67,8 +76,33 @@ export class ReviewsService {
 
     if (existingReview) throw new ConflictException('Ya calificaste este negocio.');
 
+
+    const aiResult = await this.aiService.analyzeSentiment(createReviewDto.comment);
+    let isSuspicious = false;
+
+
+    const starDifference = Math.abs(createReviewDto.rating - aiResult.aiStars);
+    if (starDifference >= 3) {
+      isSuspicious = true;
+    }
+
+
+    if (aiResult.sentiment === ReviewSentiment.NEGATIVE && business.user?.email) {
+      try {
+        await this.mailService.sendNegativeReviewAlert(
+          business.user.email,
+          business.businessName,
+          createReviewDto.comment
+        );
+      } catch (error) {
+        this.logger.error(`Error enviando correo al negocio ${businessId}:`, error);
+      }
+    }
+
     const newReview = this.reviewRepository.create({
       ...createReviewDto,
+      sentiment: aiResult.sentiment,
+      is_suspicious: isSuspicious,
       user: { id_usuario: user.id_usuario },
       business: { id_business: businessId },
     });
@@ -76,7 +110,11 @@ export class ReviewsService {
     await this.reviewRepository.save(newReview);
     await this.updateBusinessRating(businessId);
 
-    return { message: 'Reseña creada con éxito.' };
+    return { 
+      message: isSuspicious 
+        ? 'Tu reseña fue publicada, pero ha sido marcada para revisión por incongruencia.'
+        : 'Reseña creada con éxito.' 
+    };
   }
 
 
@@ -145,6 +183,7 @@ export class ReviewsService {
     return createPaginationResponse(formattedReviews, total, page, limit);
   }
 
+
   async updateReview(reviewId: number, user: any, updateReviewDto: UpdateReviewDto) {
     if (!user.isActive) {
       throw new ForbiddenException('Cuenta inhabilitada.');
@@ -166,6 +205,17 @@ export class ReviewsService {
         throw new BadRequestException('El negocio ya no acepta cambios en sus reseñas.');
     }
 
+    if (updateReviewDto.comment || updateReviewDto.rating) {
+      const textToAnalyze = updateReviewDto.comment || review.comment;
+      const currentRating = updateReviewDto.rating || review.rating;
+
+      const aiResult = await this.aiService.analyzeSentiment(textToAnalyze);
+      const starDifference = Math.abs(currentRating - aiResult.aiStars);
+      
+      review.sentiment = aiResult.sentiment;
+      review.is_suspicious = starDifference >= 3;
+    }
+
     Object.assign(review, updateReviewDto);
     await this.reviewRepository.save(review);
 
@@ -173,8 +223,13 @@ export class ReviewsService {
       await this.updateBusinessRating(review.business.id_business);
     }
 
-    return { message: 'Reseña actualizada.' };
+    return { 
+      message: review.is_suspicious 
+        ? 'Reseña actualizada, pero ha sido marcada para revisión por incongruencia.'
+        : 'Reseña actualizada correctamente.' 
+    };
   }
+
 
   async deleteReview(reviewId: number, user: any) {
     const review = await this.reviewRepository.findOne({
@@ -186,17 +241,42 @@ export class ReviewsService {
       throw new NotFoundException('La reseña no existe.');
     }
 
-
     if (review.user.id_usuario !== user.id_usuario && user.rol.nombre !== 'admin') {
       throw new ForbiddenException('No tienes permisos para eliminar esta reseña.');
     }
 
     const businessId = review.business.id_business;
-
     await this.reviewRepository.remove(review);
-
     await this.updateBusinessRating(businessId);
 
     return { message: 'Reseña eliminada correctamente.' };
+  }
+
+
+  async getSuspiciousReviews(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+
+    const [reviews, total] = await this.reviewRepository.findAndCount({
+      where: { is_suspicious: true },
+      relations: ['user', 'business'],
+      order: { created_at: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    if (total === 0) throw new NotFoundException('No hay reseñas sospechosas en este momento.');
+
+    const formattedReviews = reviews.map(r => ({
+      id_review: r.id_review,
+      rating: r.rating,
+      sentiment_ia: r.sentiment,
+      comment: r.comment,
+      fecha: r.created_at,
+      usuario: { id: r.user.id_usuario, email: r.user.email },
+      negocio: { id: r.business.id_business, nombre: r.business.businessName }
+    }));
+
+    return createPaginationResponse(formattedReviews, total, page, limit);
   }
 }

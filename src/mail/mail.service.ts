@@ -65,4 +65,15 @@ export class MailService {
       { businessName, isActive, logoUrl },
     );
   }
+
+  async sendNegativeReviewAlert(email: string, businessName: string, comment: string) {
+    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+    
+    await this.mailProvider.sendMail(
+      email,
+      'Alerta de reseña negativa',
+      'negative-review-alert',
+      { businessName, logoUrl, comment},
+    );
+  }
 }
