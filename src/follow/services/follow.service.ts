@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
-import { BusinessStatus } from 'src/shared/entities/business.entity';
+import { Business, BusinessStatus } from 'src/shared/entities/business.entity';
 import { FollowRepository } from 'src/shared/repositories/follow.repository';
 import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
@@ -22,6 +22,11 @@ export class FollowsService {
     private readonly categoryRepository: CategoryRepository,
     private readonly tagRepository: TagsRepository,
   ) {}
+
+  private sanitizePublicBusiness(business: Business) {
+      const { legal_document_url, is_legally_verified, ...rest } = business;
+      return rest as Business;
+    }
 
   async followBusiness(businessId: number, user: any) {
     const business = await this.businessRepository.findOne({
@@ -94,7 +99,8 @@ export class FollowsService {
 
     const businesses = follows.map(f => f.followedBusiness);
 
-    return createPaginationResponse(businesses, total, page, limit);
+    const sanitizedBusinesses = businesses.map(b => this.sanitizePublicBusiness(b));
+    return createPaginationResponse(sanitizedBusinesses, total, page, limit);
   }
 
   async getMyBusinessFollowers(user: any, paginationDto: PaginationDto) {
@@ -154,5 +160,24 @@ export class FollowsService {
     }));
 
     return createPaginationResponse(followers, total, page, limit);
+  }
+
+  async getMostFollowedBusinesses(paginationDto: PaginationDto) {
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page - 1) * limit;
+    const [businesses, total] = await this.businessRepository.findAndCount({
+      where: { status: BusinessStatus.ACTIVE, isActive: true },
+      order: { followers_count: 'DESC' },
+      skip,
+      take: 5,
+    });
+
+    if (total === 0) {
+      throw new NotFoundException('No hay negocios disponibles en este momento.');
+    }
+
+
+    const sanitizedBusinesses = businesses.map(b => this.sanitizePublicBusiness(b));
+    return createPaginationResponse(sanitizedBusinesses, total, page, limit);
   }
 }
