@@ -18,13 +18,13 @@ import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
 @ApiTags('follows')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('follows')
 export class FollowsController {
   constructor(private readonly followsService: FollowsService) {}
 
 
   @Post(':businessId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Seguir a un negocio' })
   @ApiResponse({ status: 201, description: 'Negocio seguido exitosamente' })
   @ApiResponse({ status: 409, description: 'Ya sigues a este negocio' })
@@ -36,6 +36,7 @@ export class FollowsController {
   }
 
   @Delete(':businessId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Dejar de seguir a un negocio' })
   @ApiResponse({ status: 200, description: 'Dejaste de seguir al negocio' })
   unfollowBusiness(
@@ -46,6 +47,7 @@ export class FollowsController {
   }
 
   @Get('my-following')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Listar los negocios que sigo (con categoría y tags)' })
   getFollowing(
     @CurrentUser() user: any,
@@ -54,20 +56,27 @@ export class FollowsController {
     return this.followsService.getFollowing(user, paginationDto);
   }
 
+  @Get('most-followed')
+  @ApiOperation({ summary: 'Listar los negocios más seguidos' })
+  getMostFollowedBusinesses(@Query() paginationDto: PaginationDto) {
+    return this.followsService.getMostFollowedBusinesses(paginationDto);
+  }
 
   @Get('management/my-followers')
+  @UseGuards(JwtAuthGuard)
   @UseGuards(RolesGuard)
   @Roles('owner')
   @ApiOperation({ summary: 'Listar los seguidores de mi negocio (Solo Owner)' })
   getMyBusinessFollowers(
     @CurrentUser() user: any,
-    @Query() paginationDto: PaginationDto, // Solo recibe el paginador, no el ID
+    @Query() paginationDto: PaginationDto,
   ) {
     return this.followsService.getMyBusinessFollowers(user, paginationDto);
   }
 
 
   @Get('admin/business/:businessId/followers')
+  @UseGuards(JwtAuthGuard)
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Ver seguidores de cualquier negocio (Solo Admin)' })

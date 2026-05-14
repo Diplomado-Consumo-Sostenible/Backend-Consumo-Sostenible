@@ -37,7 +37,7 @@ export class BusinessService {
   ) {}
 
   private sanitizePublicBusiness(business: Business) {
-    const { legal_document_url, ...rest } = business;
+    const { legal_document_url, is_legally_verified, ...rest } = business;
     return rest as Business;
   }
 
