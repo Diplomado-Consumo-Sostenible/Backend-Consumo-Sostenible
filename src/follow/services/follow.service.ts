@@ -1,17 +1,18 @@
+
 import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
   BadRequestException,
-  ForbiddenException,
+  ConflictException,
+  Injectable,
+  NotFoundException
 } from '@nestjs/common';
-import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { Business, BusinessStatus } from 'src/shared/entities/business.entity';
-import { FollowRepository } from 'src/shared/repositories/follow.repository';
 import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
-import { TagsRepository } from 'src/shared/repositories/tags.repository';
+import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
+import { FollowRepository } from 'src/shared/repositories/follow.repository';
+import { TagsRepository } from 'src/shared/repositories/tags.repository';
+import { MoreThanOrEqual } from 'typeorm';
 
 
 @Injectable()
@@ -163,21 +164,26 @@ export class FollowsService {
   }
 
   async getMostFollowedBusinesses(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
-    const skip = (page - 1) * limit;
-    const [businesses, total] = await this.businessRepository.findAndCount({
-      where: { status: BusinessStatus.ACTIVE, isActive: true },
-      order: { followers_count: 'DESC' },
-      skip,
-      take: 5,
-    });
+    const businesses = await this.businessRepository.find({
+    where: { 
+      status: BusinessStatus.ACTIVE, 
+      isActive: true,
+      followers_count: MoreThanOrEqual(1),
+    },
+    relations: ['category', 'tags', 'certifications'],
+    order: { 
+      followers_count: 'DESC',
+      createdAt: 'DESC'
+    },
+    take: 5,
+  });
 
-    if (total === 0) {
-      throw new NotFoundException('No hay negocios disponibles en este momento.');
-    }
-
-
-    const sanitizedBusinesses = businesses.map(b => this.sanitizePublicBusiness(b));
-    return createPaginationResponse(sanitizedBusinesses, total, page, limit);
+  if (businesses.length === 0) {
+    throw new NotFoundException('Aún no hay negocios con seguidores para mostrar.');
   }
+
+  return businesses.map(b => this.sanitizePublicBusiness(b));
+  
+  }
+  
 }

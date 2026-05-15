@@ -1,28 +1,27 @@
+
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  ForbiddenException,
-  ConflictException,
 } from '@nestjs/common';
-import { In, MoreThanOrEqual, Not} from 'typeorm';
-import { Business, BusinessStatus } from '../../shared/entities/business.entity';
-import { CreateBusinessDto } from '../dto/create-business.dto';
-import { UpdateBusinessDto } from '../dto/update-business.dto';
-import { User } from 'src/shared/entities/user.entity';
-import { Tag } from '../../shared/entities/tags.entity';
 import { MailService } from 'src/mail/mail.service';
-import { FindOptionsWhere, ILike } from 'typeorm';
-import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
-import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
-import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
+import { User } from 'src/shared/entities/user.entity';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
-import { TagsRepository } from 'src/shared/repositories/tags.repository';
-import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
 import { RolRepository } from 'src/shared/repositories/rol.repository';
+import { TagsRepository } from 'src/shared/repositories/tags.repository';
 import { UserRepository } from 'src/shared/repositories/user.repository';
+import { FindOptionsWhere, ILike, In, MoreThanOrEqual, Not } from 'typeorm';
+import { Business, BusinessStatus } from '../../shared/entities/business.entity';
+import { Tag } from '../../shared/entities/tags.entity';
+import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
+import { CreateBusinessDto } from '../dto/create-business.dto';
+import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
+import { BusinessSortOption, PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
+import { UpdateBusinessDto } from '../dto/update-business.dto';
 
 
 @Injectable()
@@ -43,8 +42,21 @@ export class BusinessService {
 
   //Metodos publicos
   async findAllPublic(filterDto: PublicBusinessFilterDto) {
-    const { page = 1, limit = 10, id_category, id_tag, search } = filterDto;
+    const { page = 1, limit = 50, id_category, id_tag, search, sortBy, sortDirection = 'DESC' } = filterDto;
     const skip = (page - 1) * limit;
+
+    if (!sortBy || sortBy === BusinessSortOption.RELEVANT) {
+      const [businesses, total] = await this.businessRepository
+        .findPublicWithRelevanceScore({ skip, take: limit, id_category, id_tag, search });
+
+      if (total === 0)
+        throw new NotFoundException('No hay negocios disponibles en este momento.');
+
+      return createPaginationResponse(
+        businesses.map(b => this.sanitizePublicBusiness(b)),
+        total, page, limit,
+      );
+    }
 
     const whereConditions: FindOptionsWhere<Business> = {
       status: BusinessStatus.ACTIVE,
@@ -62,10 +74,20 @@ export class BusinessService {
       whereConditions.tags = { id_tags: id_tag };
     }
 
+
+    let orderClause: any = { createdAt: sortDirection };
+
+    if (sortBy === BusinessSortOption.RATED) {
+      orderClause = { average_rating: sortDirection, total_reviews: sortDirection };
+    } else if (sortBy === BusinessSortOption.REVIEWS) {
+      orderClause = { total_reviews: sortDirection, average_rating: sortDirection };
+    } else if (sortBy === BusinessSortOption.RECENT) {
+      orderClause = { createdAt: sortDirection };
+    }
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: whereConditions,
       relations: ['category', 'tags', 'certifications'],
-      order: { createdAt: 'DESC' },
+      order: orderClause,
       skip: skip,
       take: limit,
     });
@@ -139,7 +161,7 @@ export class BusinessService {
 
   async findAllForAdmin(filters: GetBusinessesFilterDto) {
     
-    const { status, isActive, id_category, id_tag, search, page = 1, limit = 10 } = filters;
+    const { status, isActive, id_category, id_tag, search, sortBy, sortDirection = 'DESC', page = 1, limit = 10 } = filters;
     const skip = (page - 1) * limit;
     const whereCondition: FindOptionsWhere<Business> = {};
 
@@ -163,10 +185,20 @@ export class BusinessService {
       whereCondition.tags = { id_tags: id_tag };
     }
 
+    let orderClause: any = { createdAt: sortDirection };
+
+    if (sortBy === BusinessSortOption.RATED) {
+      orderClause = { average_rating: sortDirection, total_reviews: sortDirection };
+    } else if (sortBy === BusinessSortOption.REVIEWS) {
+      orderClause = { total_reviews: sortDirection, average_rating: sortDirection };
+    } else if (sortBy === BusinessSortOption.RECENT) {
+      orderClause = { createdAt: sortDirection };
+    }
+
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: whereCondition,
       relations: ['user', 'category', 'tags', 'certifications'],
-      order: { createdAt: 'DESC' },
+      order: orderClause,
       skip,
       take: limit,
     });
