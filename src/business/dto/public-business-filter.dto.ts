@@ -1,7 +1,20 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+
+
+export enum BusinessSortOption {
+  RECENT   = 'recent',
+  RATED    = 'rated',
+  REVIEWS  = 'reviews',
+  RELEVANT = 'relevant',
+}
+
+export enum SortDirection {
+  ASC = 'ASC',
+  DESC = 'DESC',
+}
 
 export class PublicBusinessFilterDto extends PaginationDto {
 
@@ -21,4 +34,16 @@ export class PublicBusinessFilterDto extends PaginationDto {
   @Type(() => Number)
   @IsNumber()
   id_tag?: number; 
+
+  @ApiPropertyOptional({ description: 'Ordenar por: recent, rated o reviews' })
+  @IsOptional()
+  @IsEnum(BusinessSortOption, {
+    message: 'sortBy debe ser un valor válido: recent, rated o reviews',
+  })
+  sortBy?: BusinessSortOption;
+
+  @ApiPropertyOptional({ description: 'Dirección de ordenamiento: ASC o DESC' })
+  @IsOptional()
+  @IsEnum(SortDirection)
+  sortDirection?: SortDirection;
 }
