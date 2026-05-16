@@ -14,14 +14,15 @@ import {
   Unique,
 } from 'typeorm';
 import { Review } from './review.entity';
+import { ReviewReport } from './review-report.entity';
+import { ReviewBlock } from './review-block.entity';
 
 @Entity('user')
 export class User {
   @PrimaryGeneratedColumn()
   id_usuario: number;
 
-  @Column({ length: 100 })
-  @Unique(['email'])
+  @Column({ length: 100, unique: true })
   email: string;
 
   @Column({ length: 255 })
@@ -55,5 +56,10 @@ export class User {
   @OneToMany(() => Review, (review) => review.user)
   reviews: Review[];
 
+  @OneToMany(() => ReviewReport, (report) => report.user)
+  reviewReports: ReviewReport[];
+
+  @OneToMany(() => ReviewBlock, (block) => block.user)
+  reviewBlocks: ReviewBlock[];
 }
 
