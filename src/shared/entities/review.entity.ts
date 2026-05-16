@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 import { Business } from "./business.entity";
 import { User } from "./user.entity";
+import { ReviewReport } from "./review-report.entity";
 
 export enum ReviewSentiment {
   POSITIVE = 'Positive',
@@ -29,6 +30,12 @@ export class Review {
 
     @Column({ default: false })
     is_suspicious: boolean;
+
+    @Column({ default: 0 })
+    report_count: number;
+
+    @Column({ default: false })
+    is_hidden_by_moderation: boolean;
     
     @CreateDateColumn({ type: 'timestamptz' })
     created_at: Date;
@@ -43,4 +50,7 @@ export class Review {
     @ManyToOne(() => Business, business => business.reviews, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'id_business' })
     business: Business;
+
+    @OneToMany(() => ReviewReport, (report) => report.review)
+    reports: ReviewReport[];
 }

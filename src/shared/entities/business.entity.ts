@@ -8,6 +8,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
@@ -16,6 +17,7 @@ import { Product } from './product.entity';
 import { Certification } from './certifications.entity';
 import { Follow } from './follow.entity';
 import { Review } from './review.entity';
+import { ReviewBlock } from './review-block.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -117,12 +119,14 @@ export class Business {
   ai_summary_updated_at: Date | null;
 
   @ManyToOne(() => User, (user) => user.business)
+  @JoinColumn({ name: 'id_usuario' })
   user: User;
 
   @OneToMany(() => Follow, (follow) => follow.followedBusiness)
   followers: Follow[];
 
   @ManyToOne(() => Category, (category) => category.businesses)
+  @JoinColumn({ name: 'id_category' })
   category: Category;
 
   @ManyToMany(() => Tag, (tag) => tag.business)
@@ -137,4 +141,8 @@ export class Business {
 
   @OneToMany(() => Review, (review) => review.business)
   reviews: Review[];
+
+  @OneToMany(() => ReviewBlock, (reviewBlock) => reviewBlock.business)
+  reviewBlocks: ReviewBlock[];
+
 }

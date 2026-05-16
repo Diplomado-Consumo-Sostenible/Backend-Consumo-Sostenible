@@ -76,4 +76,15 @@ export class MailService {
       { businessName, logoUrl, comment},
     );
   }
+
+  async sendReviewDeletedAlert(email: string, businessName: string) {
+    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+    
+    await this.mailProvider.sendMail(
+      email,
+      'Aviso de moderación: Tu reseña ha sido eliminada',
+      'review-deleted',
+      { businessName, logoUrl },
+    );
+  }
 }

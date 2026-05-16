@@ -17,6 +17,7 @@ import { GetBusinessReviewsFilterDto, SortOrder } from '../dto/get-business-revi
 import { AiService } from 'src/shared/ai/ai.service';
 import { MailService } from 'src/mail/mail.service';
 import { ReviewSentiment } from '../../shared/entities/review.entity';
+import { ReviewBlockRepository } from 'src/shared/repositories/review-block.repository';
 
 @Injectable()
 export class ReviewsService {
@@ -27,10 +28,10 @@ export class ReviewsService {
     private readonly businessRepository: BusinessRepository,
     private readonly aiService: AiService,
     private readonly mailService: MailService,
+    private readonly blockRepository: ReviewBlockRepository,
   ) {}
 
-  // --- 1. ACTUALIZAR PROMEDIO DEL NEGOCIO ---
-  private async updateBusinessRating(businessId: number) {
+  async updateBusinessRating(businessId: number) {
     const result = await this.reviewRepository
       .createQueryBuilder('review')
       .innerJoin('review.user', 'user')
@@ -53,6 +54,17 @@ export class ReviewsService {
   async createReview(businessId: number, user: any, createReviewDto: CreateReviewDto) {
     if (!user.isActive) {
       throw new ForbiddenException('Tu cuenta está inhabilitada.');
+    }
+
+    const isBlocked = await this.blockRepository.findOne({
+      where: { 
+        user: { id_usuario: user.id_usuario }, 
+        business: { id_business: businessId } 
+      }
+    });
+
+    if (isBlocked) {
+      throw new ForbiddenException('Has sido penalizado y no puedes volver a calificar este negocio.');
     }
 
     const business = await this.businessRepository.findOne({
@@ -127,7 +139,8 @@ export class ReviewsService {
       .innerJoinAndSelect('review.user', 'user')
       .leftJoinAndSelect('user.perfil', 'perfil')
       .where('review.business = :businessId', { businessId })
-      .andWhere('user.isActive = true');
+      .andWhere('user.isActive = true')
+      .andWhere('review.is_hidden_by_moderation = false');
 
     if (rating) {
       query.andWhere('review.rating = :rating', { rating });
