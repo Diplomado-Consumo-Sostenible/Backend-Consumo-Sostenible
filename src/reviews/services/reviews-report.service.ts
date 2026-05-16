@@ -51,11 +51,9 @@ export class ReviewsReportService {
 
       await this.reportRepository.save(newReport);
 
-      // 1. Incrementamos el contador
       review.report_count += 1;
       let wasAutoHidden = false;
 
-      // 2. Lógica de Auto-Ocultamiento
       if (review.report_count >= this.AUTO_HIDE_THRESHOLD && !review.is_hidden_by_moderation) {
         review.is_hidden_by_moderation = true;
         wasAutoHidden = true;
@@ -95,22 +93,43 @@ export class ReviewsReportService {
 
     if (total === 0) throw new NotFoundException('No hay reseñas reportadas.');
 
+    const formattedData = reviews.map(r => ({
+      id_review: r.id_review,
+      rating: r.rating,
+      comment: r.comment,
+      sentiment: r.sentiment,
+      is_suspicious: r.is_suspicious,
+      report_count: r.report_count,
+      is_hidden_by_moderation: r.is_hidden_by_moderation,
+      created_at: r.created_at,
+      user: {
+        id_usuario: r.user.id_usuario,
+        email: r.user.email,
+      },
+      business: {
+        id_business: r.business.id_business,
+        businessName: r.business.businessName,
+      },
+      reports: r.reports.map(rep => ({
+        id_report: rep.id_report,
+        reason: rep.reason,
+        details: rep.details,
+        created_at: rep.created_at,
+        reporter_email: rep.user.email
+      }))
+    }));
 
-    return createPaginationResponse(reviews, total, page, limit);
+    return createPaginationResponse(formattedData, total, page, limit);
     }
 
-async resolveReport(reportId: number, dto: ResolveReportDto) {
-    const report = await this.reportRepository.findOne({
-      where: { id_report: reportId },
-      relations: ['review', 'review.business', 'review.user'],
+async moderateReview(reviewId: number, dto: ResolveReportDto) {
+    const review = await this.reviewRepository.findOne({
+      where: { id_review: reviewId },
+      relations: ['business', 'user'],
     });
 
-    if (!report) throw new NotFoundException('Reporte no encontrado.');
-    if (report.status !== ReportStatus.PENDING) {
-      throw new BadRequestException('Este reporte ya ha sido procesado.');
-    }
+    if (!review) throw new NotFoundException('La reseña no existe o ya fue eliminada.');
 
-    const { review } = report;
     const businessId = review.business.id_business;
     const userEmail = review.user.email;
 
@@ -120,8 +139,9 @@ async resolveReport(reportId: number, dto: ResolveReportDto) {
         business: { id_business: businessId }
       });
       await this.blockRepository.save(block);
+    
       await this.reviewRepository.remove(review);
-      await this.reviewsService.updateBusinessRating(review.business.id_business);
+      await this.reviewsService.updateBusinessRating(businessId);
 
       try {
         await this.mailService.sendReviewDeletedAlert(userEmail, review.business.businessName);
@@ -129,20 +149,24 @@ async resolveReport(reportId: number, dto: ResolveReportDto) {
         console.error(`No se pudo enviar correo de penalización a ${userEmail}:`, error);
       }
     } 
-    
     else if (dto.action === ModerationAction.RESTORE) {
+
       review.is_hidden_by_moderation = false;
       review.report_count = 0;
       await this.reviewRepository.save(review);
 
-      report.status = ReportStatus.DISMISSED;
-      await this.reportRepository.save(report);
 
-      await this.reviewsService.updateBusinessRating(review.business.id_business);
+      await this.reportRepository.update(
+        { review: { id_review: reviewId } },
+        { status: ReportStatus.DISMISSED }
+      );
+
+
+      await this.reviewsService.updateBusinessRating(businessId);
     }
 
     return { 
-      message: `Acción '${dto.action}' ejecutada con éxito sobre la reseña #${review.id_review}` 
+      message: `Acción '${dto.action}' ejecutada con éxito sobre la reseña #${reviewId}` 
     };
   }
 }

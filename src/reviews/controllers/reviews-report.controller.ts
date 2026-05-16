@@ -39,15 +39,15 @@ export class ReviewsReportController {
     return this.reportsService.reportReview(reviewId, user, dto);
   }
 
-  @Patch('resolve/:reportId')
+  @Patch('resolve/:reviewId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Resolver un reporte (Borrar o Restaurar reseña)' })
   resolveReport(
-    @Param('reportId', ParseIntPipe) reportId: number,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
     @Body() dto: ResolveReportDto,
   ) {
-    return this.reportsService.resolveReport(reportId, dto);
+    return this.reportsService.moderateReview(reviewId, dto);
   }
 }
