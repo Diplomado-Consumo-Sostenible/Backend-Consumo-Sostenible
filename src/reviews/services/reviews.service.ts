@@ -18,6 +18,7 @@ import { AiService } from 'src/shared/ai/ai.service';
 import { MailService } from 'src/mail/mail.service';
 import { ReviewSentiment } from '../../shared/entities/review.entity';
 import { ReviewBlockRepository } from 'src/shared/repositories/review-block.repository';
+import { MoreThan } from 'typeorm';
 
 @Injectable()
 export class ReviewsService {
@@ -32,6 +33,12 @@ export class ReviewsService {
   ) {}
 
   async updateBusinessRating(businessId: number) {
+    const business = await this.businessRepository.findOne({ 
+      where: { id_business: businessId },
+      select: ['average_rating'] 
+    });
+    const oldAvg = business?.average_rating || 0;
+
     const result = await this.reviewRepository
       .createQueryBuilder('review')
       .innerJoin('review.user', 'user')
@@ -39,17 +46,21 @@ export class ReviewsService {
       .addSelect('COUNT(review.id_review)', 'count')
       .where('review.business = :businessId', { businessId })
       .andWhere('user.isActive = true')
+      .andWhere('review.is_hidden_by_moderation = false') 
       .getRawOne();
 
     const newAvg = result.avg ? parseFloat(result.avg) : 0;
     const newCount = result.count ? parseInt(result.count, 10) : 0;
 
+    const finalAvg = Number(newAvg.toFixed(2));
+
     await this.businessRepository.update(businessId, {
-      average_rating: Number(newAvg.toFixed(2)),
+      average_rating: finalAvg,
       total_reviews: newCount,
     });
-  }
 
+    return { oldAvg, newAvg: finalAvg };
+  }
 
   async createReview(businessId: number, user: any, createReviewDto: CreateReviewDto) {
     if (!user.isActive) {
@@ -88,27 +99,12 @@ export class ReviewsService {
 
     if (existingReview) throw new ConflictException('Ya calificaste este negocio.');
 
-
     const aiResult = await this.aiService.analyzeSentiment(createReviewDto.comment);
     let isSuspicious = false;
-
 
     const starDifference = Math.abs(createReviewDto.rating - aiResult.aiStars);
     if (starDifference >= 3) {
       isSuspicious = true;
-    }
-
-
-    if (aiResult.sentiment === ReviewSentiment.NEGATIVE && business.user?.email) {
-      try {
-        await this.mailService.sendNegativeReviewAlert(
-          business.user.email,
-          business.businessName,
-          createReviewDto.comment
-        );
-      } catch (error) {
-        this.logger.error(`Error enviando correo al negocio ${businessId}:`, error);
-      }
     }
 
     const newReview = this.reviewRepository.create({
@@ -120,7 +116,50 @@ export class ReviewsService {
     });
 
     await this.reviewRepository.save(newReview);
-    await this.updateBusinessRating(businessId);
+
+    const { oldAvg, newAvg } = await this.updateBusinessRating(businessId);
+    const CRITICAL_RATING = 3.5;
+    const NEGATIVE_REVIEWS_LIMIT = 5;
+
+    if (business.user?.email) {
+      if (oldAvg >= CRITICAL_RATING && newAvg < CRITICAL_RATING) {
+        try {
+          await this.mailService.sendCriticalRatingAlert(
+            business.user.email,
+            business.businessName,
+            newAvg
+          );
+        } catch (error) {
+          this.logger.error(`Error enviando alerta crítica al negocio ${businessId}:`, error);
+        }
+      }
+      
+      if (aiResult.sentiment === ReviewSentiment.NEGATIVE) {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        const totalNegatives = await this.reviewRepository.count({
+          where: { 
+            business: { id_business: businessId },
+            sentiment: ReviewSentiment.NEGATIVE,
+            is_hidden_by_moderation: false,
+            created_at: MoreThan(thirtyDaysAgo)
+          }
+        });
+
+        if (totalNegatives > 0 && totalNegatives % NEGATIVE_REVIEWS_LIMIT === 0) {
+          try {
+            await this.mailService.sendAccumulatedNegativesAlert(
+              business.user.email,
+              business.businessName,
+              totalNegatives
+            );
+          } catch (error) {
+            this.logger.error(`Error enviando alerta de acumulación al negocio ${businessId}:`, error);
+          }
+        }
+      }
+    }
 
     return { 
       message: isSuspicious 
@@ -128,7 +167,6 @@ export class ReviewsService {
         : 'Reseña creada con éxito.' 
     };
   }
-
 
   async getBusinessReviews(businessId: number, filterDto: GetBusinessReviewsFilterDto) {
     const { page = 1, limit = 10, rating, order = SortOrder.DESC } = filterDto;
@@ -152,19 +190,53 @@ export class ReviewsService {
 
     const [reviews, total] = await query.getManyAndCount();
 
-    if (total === 0) throw new NotFoundException('No hay reseñas para mostrar con estos filtros.');
+    if (total === 0) {
+      return createPaginationResponse([], 0, page, limit);
+    }
 
     const formattedReviews = reviews.map(r => ({
       id_review: r.id_review,
       rating: r.rating,
       comment: r.comment,
       fecha: r.created_at,
-      usuario: r.user.perfil?.nombre || 'Usuario EcoVida'
+      id_usuario: r.user.id_usuario,
+      usuario: r.user.perfil?.nombre || 'Usuario EcoVida',
+      avatar: r.user.perfil?.foto_perfil ?? null,
     }));
 
     return createPaginationResponse(formattedReviews, total, page, limit);
   }
 
+  async getMyReviewForBusiness(businessId: number, user: any) {
+    const review = await this.reviewRepository.findOne({
+      where: {
+        user:     { id_usuario: user.id_usuario },
+        business: { id_business: businessId },
+      },
+    });
+    if (!review) throw new NotFoundException('No tienes una reseña para este negocio.');
+    return {
+      id_review: review.id_review,
+      rating:    review.rating,
+      comment:   review.comment,
+      fecha:     review.created_at,
+    };
+  }
+
+  async reportReview(reviewId: number, user: any, reason?: string) {
+    const review = await this.reviewRepository.findOne({
+      where:     { id_review: reviewId },
+      relations: ['user'],
+    });
+    if (!review) throw new NotFoundException('Reseña no encontrada.');
+    if (review.user.id_usuario === user.id_usuario) {
+      throw new ForbiddenException('No puedes reportar tu propia reseña.');
+    }
+    review.is_suspicious = true;
+    await this.reviewRepository.save(review);
+    this.logger.log(`Reseña ${reviewId} reportada por usuario ${user.id_usuario}. Motivo: ${reason ?? 'No especificado'}`);
+    return { message: 'Reseña reportada. Será revisada por el equipo de moderación.' };
+  }
 
   async getMyReviews(user: any, paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
@@ -179,7 +251,7 @@ export class ReviewsService {
     });
 
     if (total === 0) {
-      throw new NotFoundException('Aún no has escrito ninguna reseña.');
+      return createPaginationResponse([], 0, page, limit);
     }
 
     const formattedReviews = reviews.map(r => ({
@@ -195,7 +267,6 @@ export class ReviewsService {
 
     return createPaginationResponse(formattedReviews, total, page, limit);
   }
-
 
   async updateReview(reviewId: number, user: any, updateReviewDto: UpdateReviewDto) {
     if (!user.isActive) {
@@ -243,7 +314,6 @@ export class ReviewsService {
     };
   }
 
-
   async deleteReview(reviewId: number, user: any) {
     const review = await this.reviewRepository.findOne({
       where: { id_review: reviewId },
@@ -264,7 +334,6 @@ export class ReviewsService {
 
     return { message: 'Reseña eliminada correctamente.' };
   }
-
 
   async getSuspiciousReviews(paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;

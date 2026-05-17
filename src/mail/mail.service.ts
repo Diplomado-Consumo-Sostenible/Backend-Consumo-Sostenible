@@ -87,4 +87,26 @@ export class MailService {
       { businessName, logoUrl },
     );
   }
+
+  async sendCriticalRatingAlert(email: string, businessName: string, currentRating: number) {
+    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+    
+    await this.mailProvider.sendMail(
+      email,
+      'Alerta: Tu calificación general ha bajado',
+      'critical-rating-alert',
+      { businessName, logoUrl, currentRating },
+    );
+  }
+
+  async sendAccumulatedNegativesAlert(email: string, businessName: string, totalNegatives: number) {
+    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+    
+    await this.mailProvider.sendMail(
+      email,
+      'Aviso sobre la percepción de tus clientes',
+      'accumulated-negatives-alert',
+      { businessName, logoUrl, totalNegatives },
+    );
+  }
 }

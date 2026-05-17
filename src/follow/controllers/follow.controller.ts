@@ -63,8 +63,7 @@ export class FollowsController {
   }
 
   @Get('management/my-followers')
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner')
   @ApiOperation({ summary: 'Listar los seguidores de mi negocio (Solo Owner)' })
   getMyBusinessFollowers(
@@ -76,8 +75,7 @@ export class FollowsController {
 
 
   @Get('admin/business/:businessId/followers')
-  @UseGuards(JwtAuthGuard)
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Ver seguidores de cualquier negocio (Solo Admin)' })
   getBusinessFollowersForAdmin(
