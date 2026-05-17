@@ -16,6 +16,7 @@ import { ModerationAction, ResolveReportDto } from '../dto/resolve-report.dto';
 import { ReportStatus } from 'src/shared/entities/review-report.entity';
 import { ReviewBlockRepository } from 'src/shared/repositories/review-block.repository';
 import { MailService } from 'src/mail/mail.service';
+import { GetReportedReviewsFilterDto } from '../dto/get-reported-reviews-filter.dto';
 
 @Injectable()
 export class ReviewsReportService {
@@ -79,19 +80,26 @@ export class ReviewsReportService {
     }
   }
 
-  async getReportedReviews(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async getReportedReviews(filterDto: GetReportedReviewsFilterDto) {
+    const { page = 1, limit = 10, reason } = filterDto;
     const skip = (page - 1) * limit;
+    
+    const whereCondition: any = { report_count: MoreThanOrEqual(1) };
+
+    if (reason) {
+      whereCondition.reports = { reason: reason };
+    }
+
 
     const [reviews, total] = await this.reviewRepository.findAndCount({
-      where: { report_count: MoreThanOrEqual(1) },
+      where: whereCondition,
       relations: ['reports', 'reports.user', 'user', 'business'],
       order: { report_count: 'DESC' },
       skip,
       take: limit,
     });
 
-    if (total === 0) throw new NotFoundException('No hay reseñas reportadas.');
+    if (total === 0) throw new NotFoundException('No se encontraron reseñas con esos criterios.');
 
     const formattedData = reviews.map(r => ({
       id_review: r.id_review,
