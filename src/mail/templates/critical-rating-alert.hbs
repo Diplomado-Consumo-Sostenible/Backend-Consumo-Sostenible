@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+    .container { background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: auto; }
+    .header { text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px; margin-bottom: 20px; }
+    .logo { max-width: 150px; }
+    .content { color: #333333; line-height: 1.6; }
+    .alert-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; font-weight: bold; color: #856404; }
+    .footer { text-align: center; font-size: 12px; color: #777777; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      {{#if logoUrl}}
+        <img src="{{logoUrl}}" alt="EcoVida Logo" class="logo">
+      {{else}}
+        <h2>EcoVida</h2>
+      {{/if}}
+    </div>
+    
+    <div class="content">
+      <p>Hola, <strong>{{businessName}}</strong>.</p>
+      <p>Te escribimos porque hemos notado una caída importante en la calificación general de tu negocio dentro de nuestra plataforma.</p>
+      
+      <div class="alert-box">
+        Tu calificación promedio actual ha bajado a: {{currentRating}} estrellas.
+      </div>
+      
+      <p>Una calificación baja puede afectar la visibilidad de tu negocio y la confianza de los clientes. Te sugerimos revisar las últimas reseñas para identificar áreas de mejora y demostrar tu compromiso con su satisfacción.</p>
+      
+      <p>¡Mucho éxito mejorando esos números!</p>
+    </div>
+    
+    <div class="footer">
+      <p>Este es un mensaje automático de EcoVida. Por favor no respondas a este correo.</p>
+    </div>
+  </div>
+</body>
+</html>

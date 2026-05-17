@@ -6,8 +6,8 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
-import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { ResolveReportDto } from '../dto/resolve-report.dto';
+import { GetReportedReviewsFilterDto } from '../dto/get-reported-reviews-filter.dto';
 
 @ApiTags('reviews-reports')
 @Controller('reviews/reports')
@@ -19,11 +19,11 @@ export class ReviewsReportController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN') 
-  @ApiOperation({ summary: 'Ver reseñas reportadas ordenadas por cantidad de reportes' })
+  @ApiOperation({ summary: 'Ver reseñas reportadas filtradas por motivo' })
   getReportedReviews(
-    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: GetReportedReviewsFilterDto,
   ) {
-    return this.reportsService.getReportedReviews(paginationDto);
+    return this.reportsService.getReportedReviews(filterDto);
   }
 
 

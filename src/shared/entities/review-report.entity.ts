@@ -11,11 +11,13 @@ import { User } from './user.entity';
 import { Review } from './review.entity';
 
 export enum ReportReason {
-  OFFENSIVE = 'Lenguaje ofensivo o inapropiado',
-  SPAM = 'Spam o publicidad',
-  FAKE = 'Reseña falsa o no es cliente',
-  OTHER = 'Otro',
-}
+  OFFENSIVE = 'Lenguaje inapropiado u ofensivo',
+  FAKE = 'Contenido falso o engañoso',
+  SPAM = 'Spam o publicidad no solicitada',
+  HARASSMENT = 'Acoso o amenazas',
+  PERSONAL_INFO = 'Información personal expuesta',
+  OTHER = 'Otro motivo',
+} 
 
 export enum ReportStatus {
   PENDING = 'Pendiente',

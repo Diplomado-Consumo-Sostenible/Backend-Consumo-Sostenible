@@ -54,6 +54,14 @@ export class CreateBusinessDto {
   @IsString({ each: true }) 
   images?: string[];
 
+  @ApiPropertyOptional({
+    description: 'URL de una imagen de banner para la página del negocio',
+    example: 'https://res.cloudinary.com/tu-app/image/upload/v1/banner.png',
+  })
+  @IsOptional()
+  @IsUrl({}, { each: true })
+  banner_image?: string;
+
   @ApiProperty({
     description: 'Dirección física del negocio',
     example: 'Calle 123 #45-67, Barrio Centro',
