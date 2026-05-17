@@ -31,6 +31,47 @@ export class ReviewsService {
     private readonly mailService: MailService,
     private readonly blockRepository: ReviewBlockRepository,
   ) {}
+  private async checkAndSendBusinessAlerts(
+    businessId: number,
+    email: string,
+    businessName: string,
+    oldAvg: number,
+    newAvg: number,
+    sentiment: ReviewSentiment,
+  ) {
+    const CRITICAL_RATING = 3.5;
+    const NEGATIVE_REVIEWS_LIMIT = 5;
+
+    if (oldAvg >= CRITICAL_RATING && newAvg < CRITICAL_RATING) {
+      try {
+        await this.mailService.sendCriticalRatingAlert(email, businessName, newAvg);
+      } catch (error) {
+        this.logger.error(`Error enviando alerta crítica al negocio ${businessId}:`, error);
+      }
+    }
+
+    if (sentiment === ReviewSentiment.NEGATIVE) {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const totalNegatives = await this.reviewRepository.count({
+        where: {
+          business: { id_business: businessId },
+          sentiment: ReviewSentiment.NEGATIVE,
+          is_hidden_by_moderation: false,
+          created_at: MoreThan(thirtyDaysAgo),
+        },
+      });
+
+      if (totalNegatives > 0 && totalNegatives % NEGATIVE_REVIEWS_LIMIT === 0) {
+        try {
+          await this.mailService.sendAccumulatedNegativesAlert(email, businessName, totalNegatives);
+        } catch (error) {
+          this.logger.error(`Error enviando alerta de acumulación al negocio ${businessId}:`, error);
+        }
+      }
+    }
+  }
 
   async updateBusinessRating(businessId: number) {
     const business = await this.businessRepository.findOne({ 
@@ -118,48 +159,18 @@ export class ReviewsService {
     await this.reviewRepository.save(newReview);
 
     const { oldAvg, newAvg } = await this.updateBusinessRating(businessId);
-    const CRITICAL_RATING = 3.5;
-    const NEGATIVE_REVIEWS_LIMIT = 5;
 
     if (business.user?.email) {
-      if (oldAvg >= CRITICAL_RATING && newAvg < CRITICAL_RATING) {
-        try {
-          await this.mailService.sendCriticalRatingAlert(
-            business.user.email,
-            business.businessName,
-            newAvg
-          );
-        } catch (error) {
-          this.logger.error(`Error enviando alerta crítica al negocio ${businessId}:`, error);
-        }
-      }
-      
-      if (aiResult.sentiment === ReviewSentiment.NEGATIVE) {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
-        const totalNegatives = await this.reviewRepository.count({
-          where: { 
-            business: { id_business: businessId },
-            sentiment: ReviewSentiment.NEGATIVE,
-            is_hidden_by_moderation: false,
-            created_at: MoreThan(thirtyDaysAgo)
-          }
-        });
-
-        if (totalNegatives > 0 && totalNegatives % NEGATIVE_REVIEWS_LIMIT === 0) {
-          try {
-            await this.mailService.sendAccumulatedNegativesAlert(
-              business.user.email,
-              business.businessName,
-              totalNegatives
-            );
-          } catch (error) {
-            this.logger.error(`Error enviando alerta de acumulación al negocio ${businessId}:`, error);
-          }
-        }
-      }
+      await this.checkAndSendBusinessAlerts(
+        businessId, 
+        business.user.email, 
+        business.businessName, 
+        oldAvg, 
+        newAvg, 
+        aiResult.sentiment
+      );
     }
+
 
     return { 
       message: isSuspicious 
@@ -223,21 +234,6 @@ export class ReviewsService {
     };
   }
 
-  async reportReview(reviewId: number, user: any, reason?: string) {
-    const review = await this.reviewRepository.findOne({
-      where:     { id_review: reviewId },
-      relations: ['user'],
-    });
-    if (!review) throw new NotFoundException('Reseña no encontrada.');
-    if (review.user.id_usuario === user.id_usuario) {
-      throw new ForbiddenException('No puedes reportar tu propia reseña.');
-    }
-    review.is_suspicious = true;
-    await this.reviewRepository.save(review);
-    this.logger.log(`Reseña ${reviewId} reportada por usuario ${user.id_usuario}. Motivo: ${reason ?? 'No especificado'}`);
-    return { message: 'Reseña reportada. Será revisada por el equipo de moderación.' };
-  }
-
   async getMyReviews(user: any, paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
@@ -281,7 +277,10 @@ export class ReviewsService {
     if (!review) throw new NotFoundException('Reseña no encontrada.');
     if (review.user.id_usuario !== user.id_usuario) throw new ForbiddenException('No es tu reseña.');
 
-    const business = await this.businessRepository.findOne({ where: { id_business: review.business.id_business }});
+    const business = await this.businessRepository.findOne({ 
+      where: { id_business: review.business.id_business },
+      relations: ['user']
+    });
     if (!business) {
         throw new NotFoundException('Negocio no encontrado.');
     }
@@ -303,8 +302,18 @@ export class ReviewsService {
     Object.assign(review, updateReviewDto);
     await this.reviewRepository.save(review);
 
-    if (updateReviewDto.rating) {
-      await this.updateBusinessRating(review.business.id_business);
+    if (updateReviewDto.rating || updateReviewDto.comment) {
+      const { oldAvg, newAvg } = await this.updateBusinessRating(review.business.id_business);
+      if (business.user?.email) {
+        await this.checkAndSendBusinessAlerts(
+          business.id_business,
+          business.user.email,
+          business.businessName,
+          oldAvg,
+          newAvg,
+          review.sentiment
+        );
+      }
     }
 
     return { 
