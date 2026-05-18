@@ -4,6 +4,7 @@ import { Rol } from './rol.entity';
 import { Follow } from './follow.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -39,6 +40,9 @@ export class User {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @CreateDateColumn({type: 'timestamptz'})
+  createdAt!: Date;
 
   @ManyToOne(() => Rol, (rol) => rol.users)
   @JoinColumn({ name: 'rolId' })
