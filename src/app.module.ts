@@ -17,6 +17,7 @@ import { ProductModule } from './products/products.module';
 import { CertificationsModule } from './certifications/certifications.module';
 import { FollowModule } from './follow/follow.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 
 @Module({
@@ -40,6 +41,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     CertificationsModule,
     FollowModule,
     ReviewsModule,
+    NotificationsModule,
   ],
 
   controllers: [AppController],

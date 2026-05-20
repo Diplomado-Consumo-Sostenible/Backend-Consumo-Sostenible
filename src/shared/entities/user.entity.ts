@@ -17,6 +17,7 @@ import {
 import { Review } from './review.entity';
 import { ReviewReport } from './review-report.entity';
 import { ReviewBlock } from './review-block.entity';
+import { Notification } from './notification.entity';
 
 @Entity('user')
 export class User {
@@ -65,5 +66,8 @@ export class User {
 
   @OneToMany(() => ReviewBlock, (block) => block.user)
   reviewBlocks: ReviewBlock[];
+
+  @OneToMany(() => Notification, (notification) => notification.owner)
+  notifications: Notification[];
 }
 

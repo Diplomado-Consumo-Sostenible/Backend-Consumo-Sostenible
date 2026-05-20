@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f4f0; padding: 20px; margin: 0; }
+    .container { background: #ffffff; padding: 32px; border-radius: 10px; max-width: 620px; margin: auto; }
+    .header { text-align: center; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px; margin-bottom: 24px; }
+    .logo { max-width: 140px; }
+    h2 { color: #1b5e20; font-size: 20px; margin: 0 0 4px; }
+    .period { color: #777; font-size: 13px; margin: 0; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+    .stat-card { border-radius: 8px; padding: 14px 10px; text-align: center; }
+    .stat-pos { background: #e8f5e9; }
+    .stat-neu { background: #fff8e1; }
+    .stat-neg { background: #ffebee; }
+    .stat-number { font-size: 28px; font-weight: bold; margin: 0; }
+    .stat-pos .stat-number { color: #2e7d32; }
+    .stat-neu .stat-number { color: #f57c00; }
+    .stat-neg .stat-number { color: #c62828; }
+    .stat-label { font-size: 12px; color: #555; margin: 4px 0 0; }
+    .stat-pct { font-size: 11px; color: #888; }
+
+    /* Summary row */
+    .summary-row { display: flex; gap: 16px; margin: 16px 0; }
+    .summary-item { flex: 1; background: #f5f5f5; border-radius: 8px; padding: 12px 14px; }
+    .summary-item .label { font-size: 12px; color: #777; margin: 0; }
+    .summary-item .value { font-size: 18px; font-weight: bold; color: #333; margin: 4px 0 0; }
+
+    /* AI insight */
+    .ai-section { background: #f3f8f3; border-left: 4px solid #2e7d32; padding: 16px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+    .ai-label { font-size: 11px; font-weight: bold; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; }
+    .ai-content { font-size: 14px; color: #333; line-height: 1.7; margin: 0; }
+
+    .footer { text-align: center; font-size: 11px; color: #aaa; margin-top: 28px; border-top: 1px solid #eee; padding-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      {{#if logoUrl}}
+        <img src="{{logoUrl}}" alt="EcoVida" class="logo">
+      {{else}}
+        <h2 style="color:#2e7d32">EcoVida</h2>
+      {{/if}}
+      <h2>Reporte semanal de reseñas</h2>
+      <p class="period">{{businessName}} &mdash; {{weekStartStr}} al {{weekEndStr}}</p>
+    </div>
+
+    <!-- Contadores pos / neu / neg -->
+    <div class="stats-grid">
+      <div class="stat-card stat-pos">
+        <p class="stat-number">{{stats.positive}}</p>
+        <p class="stat-label">Positivas</p>
+        <p class="stat-pct">{{stats.pctPos}}%</p>
+      </div>
+      <div class="stat-card stat-neu">
+        <p class="stat-number">{{stats.neutral}}</p>
+        <p class="stat-label">Neutrales</p>
+        <p class="stat-pct">{{stats.pctNeu}}%</p>
+      </div>
+      <div class="stat-card stat-neg">
+        <p class="stat-number">{{stats.negative}}</p>
+        <p class="stat-label">Negativas</p>
+        <p class="stat-pct">{{stats.pctNeg}}%</p>
+      </div>
+    </div>
+
+    <!-- Promedio y tendencia -->
+    <div class="summary-row">
+      <div class="summary-item">
+        <p class="label">Total esta semana</p>
+        <p class="value">{{stats.total}} reseñas</p>
+      </div>
+      <div class="summary-item">
+        <p class="label">Calificación promedio</p>
+        <p class="value">{{stats.averageRating}} ★</p>
+      </div>
+      <div class="summary-item">
+        <p class="label">Tendencia</p>
+        <p class="value" style="color: {{trendColor}}">{{trendLabel}}</p>
+      </div>
+    </div>
+
+    <!-- Insight generado por Claude -->
+    <div class="ai-section">
+      <p class="ai-label">✦ Análisis generado por IA</p>
+      <p class="ai-content">{{{aiSummaryHtml}}}</p>
+    </div>
+
+    <p style="font-size:13px; color:#555; line-height:1.6;">
+      Accede a tu panel en EcoVida para ver el detalle completo de cada reseña
+      y gestionar las respuestas a tus clientes.
+    </p>
+
+    <div class="footer">
+      <p>Este reporte es generado automáticamente cada lunes por EcoVida.<br>
+      Por favor no respondas a este correo.</p>
+    </div>
+  </div>
+</body>
+</html>

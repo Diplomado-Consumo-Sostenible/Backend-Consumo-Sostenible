@@ -18,6 +18,7 @@ import { Certification } from './certifications.entity';
 import { Follow } from './follow.entity';
 import { Review } from './review.entity';
 import { ReviewBlock } from './review-block.entity';
+import { Notification } from './notification.entity';
 
 export enum BusinessStatus {
   ACTIVE = 'Active',
@@ -149,4 +150,6 @@ export class Business {
   @OneToMany(() => ReviewBlock, (reviewBlock) => reviewBlock.business)
   reviewBlocks: ReviewBlock[];
 
+  @OneToMany(() => Notification, (notification) => notification.business)
+  notifications: Notification[];
 }
