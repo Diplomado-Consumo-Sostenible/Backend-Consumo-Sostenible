@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
@@ -15,6 +16,7 @@ export class ProductService {
   constructor(
     private readonly productRepository: ProductRepository,
     private readonly businessRepository: BusinessRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
 
@@ -67,6 +69,16 @@ export class ProductService {
     });
 
     const savedProduct = await this.productRepository.save(newProduct);
+
+    this.eventEmitter.emit('product.created', {
+      businessId:   business.id_business,
+      businessName: business.businessName,
+      businessLogo: business.logo ?? null,
+      productId:    savedProduct.id_product,
+      productName:  savedProduct.name,
+      productImage: savedProduct.image ?? null,
+    });
+
     return { message: `Producto creado exitosamente: ${savedProduct.name}` };
   }
 

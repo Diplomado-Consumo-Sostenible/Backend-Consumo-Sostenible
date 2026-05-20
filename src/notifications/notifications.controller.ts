@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -22,7 +23,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get('my')
-  @Roles('owner', 'ADMIN')
+  @Roles('owner', 'ADMIN', 'USER')
   @ApiOperation({ summary: 'Historial de notificaciones del usuario autenticado' })
   getMyNotifications(
     @CurrentUser() user: any,
@@ -37,16 +38,23 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
-  @Roles('owner', 'ADMIN')
+  @Roles('owner', 'ADMIN', 'USER')
   @ApiOperation({ summary: 'Marcar una notificación como leída' })
   markRead(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.notificationsService.markRead(id, user);
   }
 
   @Patch('read-all')
-  @Roles('owner', 'ADMIN')
+  @Roles('owner', 'ADMIN', 'USER')
   @ApiOperation({ summary: 'Marcar todas las notificaciones como leídas' })
   markAllRead(@CurrentUser() user: any) {
     return this.notificationsService.markAllRead(user);
+  }
+
+  @Delete(':id')
+  @Roles('owner', 'ADMIN', 'USER')
+  @ApiOperation({ summary: 'Eliminar una notificación' })
+  deleteNotification(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    return this.notificationsService.deleteNotification(id, user);
   }
 }
