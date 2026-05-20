@@ -36,6 +36,8 @@ import { ReviewBlockRepository } from './repositories/review-block.repository';
 import { ReviewReportRepository } from './repositories/review-report.repository';
 import { ReviewBlock } from './entities/review-block.entity';
 import { ReviewReport } from './entities/review-report.entity';
+import { Notification } from './entities/notification.entity';
+import { NotificationRepository } from './repositories/notification.repository';
 
 @Module({})
 export class SharedModule {
@@ -95,6 +97,7 @@ export class SharedModule {
           Review,
           ReviewBlock,
           ReviewReport,
+          Notification,
         ]),
         MailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -124,6 +127,7 @@ export class SharedModule {
         AiService,
         ReviewBlockRepository,
         ReviewReportRepository,
+        NotificationRepository,
       ],
       exports: [
         TypeOrmModule,
@@ -144,6 +148,7 @@ export class SharedModule {
         AiService,
         ReviewBlockRepository,
         ReviewReportRepository,
+        NotificationRepository,
       ],
     };
   }
