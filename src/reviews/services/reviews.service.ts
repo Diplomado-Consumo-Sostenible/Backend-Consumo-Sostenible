@@ -37,10 +37,6 @@ export class ReviewsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /**
-   * Verifica umbrales de alerta y envía emails + emite eventos WebSocket.
-   * Se llama siempre que se crea o actualiza una reseña.
-   */
   private async checkAndSendBusinessAlerts(
     businessId: number,
     email: string,
@@ -53,8 +49,7 @@ export class ReviewsService {
     const CRITICAL_RATING = 3.5;
     const NEGATIVE_REVIEWS_LIMIT = 5;
 
-    // Alerta: promedio cayó por debajo de 3.5
-    if (oldAvg >= CRITICAL_RATING && newAvg < CRITICAL_RATING) {
+    if (newAvg > 0 && newAvg < CRITICAL_RATING && (oldAvg >= CRITICAL_RATING || oldAvg === 0)) {
       try {
         await this.mailService.sendCriticalRatingAlert(email, businessName, newAvg);
         this.eventEmitter.emit('sentiment.alert.critical_rating', {
@@ -67,7 +62,6 @@ export class ReviewsService {
       }
     }
 
-    // Alerta: múltiplo de 5 reseñas negativas en los últimos 30 días
     if (sentiment === ReviewSentiment.NEGATIVE) {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -162,7 +156,6 @@ export class ReviewsService {
 
     if (existingReview) throw new ConflictException('Ya calificaste este negocio.');
 
-    // Análisis IA: ahora retorna probabilidades + urgency además de sentiment y aiStars
     const aiResult = await this.aiService.analyzeSentiment(createReviewDto.comment);
 
     const starDifference = Math.abs(createReviewDto.rating - aiResult.aiStars);
@@ -180,7 +173,6 @@ export class ReviewsService {
 
     const { oldAvg, newAvg } = await this.updateBusinessRating(businessId);
 
-    // Payload base para todos los eventos WebSocket de esta reseña
     const notificationPayload: SentimentNotificationDto = {
       businessId,
       businessName: business.businessName,
@@ -194,15 +186,13 @@ export class ReviewsService {
       isSuspicious,
     };
 
-    // Evento principal: siempre se emite → panel en vivo del frontend
+
     this.eventEmitter.emit('sentiment.review.created', notificationPayload);
 
-    // Evento sospechosa: reseña con incongruencia alta entre score usuario e IA
     if (isSuspicious) {
       this.eventEmitter.emit('sentiment.review.suspicious', notificationPayload);
     }
 
-    // Alertas de umbral (email + WebSocket)
     if (business.user?.email) {
       await this.checkAndSendBusinessAlerts(
         businessId,

@@ -125,7 +125,6 @@ export class MailService {
     const trendLabel  = stats.trend === 'improving' ? '📈 Mejorando' : stats.trend === 'declining' ? '📉 Empeorando' : '➡️ Estable';
     const trendColor  = stats.trend === 'improving' ? '#2e7d32' : stats.trend === 'declining' ? '#c62828' : '#f57c00';
 
-    // Convierte markdown bold (**texto**) a <strong> para el template HTML
     const aiSummaryHtml = aiSummary
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
