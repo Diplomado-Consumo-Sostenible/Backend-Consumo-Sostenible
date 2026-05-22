@@ -1,34 +1,34 @@
-import { IsString, IsNotEmpty, IsUrl } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsUrl, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateCertificationDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Nombre de la certificación',
-    example: 'Sello Orgánico 100%' 
+    example: 'Sello Orgánico 100%'
   })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Entidad emisora de la certificación',
-    example: 'Ministerio de Agricultura' 
+    example: 'Ministerio de Agricultura'
   })
   @IsString()
   @IsNotEmpty()
   issuing_entity: string;
 
-  @ApiProperty({ 
-    description: 'URL de verificación de la certificación',
-    example: 'https://verificacion.gob/12345' 
+  @ApiPropertyOptional({
+    description: 'URL de verificación de la certificación (opcional)',
+    example: 'https://verificacion.gob/12345'
   })
+  @IsOptional()
   @IsUrl()
-  @IsNotEmpty()
-  verification_url: string;
+  verification_url?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'URL del badge de la certificación',
-    example: 'https://res.cloudinary.com/.../sello.png' 
+    example: 'https://res.cloudinary.com/.../sello.png'
   })
   @IsUrl()
   @IsNotEmpty()

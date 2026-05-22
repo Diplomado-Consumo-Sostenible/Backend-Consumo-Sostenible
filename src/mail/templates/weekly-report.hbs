@@ -10,7 +10,7 @@
     h2 { color: #1b5e20; font-size: 20px; margin: 0 0 4px; }
     .period { color: #777; font-size: 13px; margin: 0; }
 
-    /* Stats grid */
+
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
     .stat-card { border-radius: 8px; padding: 14px 10px; text-align: center; }
     .stat-pos { background: #e8f5e9; }
@@ -23,13 +23,13 @@
     .stat-label { font-size: 12px; color: #555; margin: 4px 0 0; }
     .stat-pct { font-size: 11px; color: #888; }
 
-    /* Summary row */
+
     .summary-row { display: flex; gap: 16px; margin: 16px 0; }
     .summary-item { flex: 1; background: #f5f5f5; border-radius: 8px; padding: 12px 14px; }
     .summary-item .label { font-size: 12px; color: #777; margin: 0; }
     .summary-item .value { font-size: 18px; font-weight: bold; color: #333; margin: 4px 0 0; }
 
-    /* AI insight */
+
     .ai-section { background: #f3f8f3; border-left: 4px solid #2e7d32; padding: 16px 18px; border-radius: 0 8px 8px 0; margin: 20px 0; }
     .ai-label { font-size: 11px; font-weight: bold; color: #2e7d32; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px; }
     .ai-content { font-size: 14px; color: #333; line-height: 1.7; margin: 0; }
@@ -49,7 +49,6 @@
       <p class="period">{{businessName}} &mdash; {{weekStartStr}} al {{weekEndStr}}</p>
     </div>
 
-    <!-- Contadores pos / neu / neg -->
     <div class="stats-grid">
       <div class="stat-card stat-pos">
         <p class="stat-number">{{stats.positive}}</p>
@@ -68,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Promedio y tendencia -->
     <div class="summary-row">
       <div class="summary-item">
         <p class="label">Total esta semana</p>
@@ -84,7 +82,6 @@
       </div>
     </div>
 
-    <!-- Insight generado por Claude -->
     <div class="ai-section">
       <p class="ai-label">✦ Análisis generado por IA</p>
       <p class="ai-content">{{{aiSummaryHtml}}}</p>

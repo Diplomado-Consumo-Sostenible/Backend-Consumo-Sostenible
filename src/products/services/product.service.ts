@@ -3,10 +3,11 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { ILike } from 'typeorm';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
-import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
+import { GetProductsFilterDto } from '../dto/get-products-filter.dto';
 import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
 import { ProductRepository } from 'src/shared/repositories/products.reposiroty';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
@@ -20,23 +21,31 @@ export class ProductService {
   ) {}
 
 
-  async findAllByBusiness(businessId: number, paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async findAllByBusiness(businessId: number, filterDto: GetProductsFilterDto) {
+    const {
+      page   = 1,
+      limit  = 10,
+      search,
+      sortBy = 'createdAt',
+      order  = 'DESC',
+    } = filterDto;
+
     const skip = (page - 1) * limit;
 
     const business = await this.businessRepository.findOne({ where: { id_business: businessId } });
     if (!business) throw new NotFoundException('Negocio no encontrado');
 
+    const where: any = { business: { id_business: businessId }, isActive: true };
+    if (search?.trim()) {
+      where.name = ILike(`%${search.trim()}%`);
+    }
+
     const [products, total] = await this.productRepository.findAndCount({
-      where: { business: { id_business: businessId }, isActive: true },
-      order: { createdAt: 'DESC' },
-      skip: skip,
+      where,
+      order: { [sortBy]: order },
+      skip,
       take: limit,
     });
-
-    if (total === 0) {
-      throw new NotFoundException('Este negocio aún no tiene productos disponibles.');
-    }
 
     return createPaginationResponse(products, total, page, limit);
   }

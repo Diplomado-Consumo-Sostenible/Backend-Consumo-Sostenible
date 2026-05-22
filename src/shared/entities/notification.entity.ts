@@ -19,10 +19,12 @@ export enum NotificationAlertType {
   REVIEW_HIDDEN         = 'review_hidden',
   REVIEW_DELETED        = 'review_deleted',
   REVIEW_RESTORED       = 'review_restored',
-  BUSINESS_CREATED      = 'business_created',
-  BUSINESS_APPROVED     = 'business_approved',
-  BUSINESS_REJECTED     = 'business_rejected',
-  BUSINESS_RESUBMITTED  = 'business_resubmitted',
+  BUSINESS_CREATED          = 'business_created',
+  BUSINESS_APPROVED         = 'business_approved',
+  BUSINESS_REJECTED         = 'business_rejected',
+  BUSINESS_RESUBMITTED      = 'business_resubmitted',
+  CERTIFICATION_APPROVED    = 'certification_approved',
+  CERTIFICATION_REJECTED    = 'certification_rejected',
 }
 
 @Entity('notification')

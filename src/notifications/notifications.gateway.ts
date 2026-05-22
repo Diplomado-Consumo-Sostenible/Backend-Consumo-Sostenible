@@ -452,4 +452,66 @@ export class NotificationsGateway
       this.logger.error('Error en handleBusinessResubmitted:', err);
     }
   }
+
+  @OnEvent('certification.approved')
+  async handleCertificationApproved(payload: {
+    ownerId:           number;
+    businessId:        number;
+    businessName:      string;
+    certificationName: string;
+    issuingEntity:     string;
+  }) {
+    try {
+      const alertPayload = { ...payload, alertType: 'certification_approved' };
+
+      const saved = await this.notificationsService.create({
+        ownerId:    payload.ownerId,
+        businessId: payload.businessId,
+        alertType:  NotificationAlertType.CERTIFICATION_APPROVED,
+        payload:    alertPayload,
+      });
+
+      this.server.to(`business_${payload.businessId}`).emit('certification:approved', {
+        ...alertPayload,
+        id:        saved.id,
+        timestamp: saved.createdAt.toISOString(),
+        isRead:    false,
+      });
+
+      this.logger.log(`Notificación certification_approved enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+    } catch (err) {
+      this.logger.error('Error en handleCertificationApproved:', err);
+    }
+  }
+
+  @OnEvent('certification.rejected')
+  async handleCertificationRejected(payload: {
+    ownerId:           number;
+    businessId:        number;
+    businessName:      string;
+    certificationName: string;
+    issuingEntity:     string;
+  }) {
+    try {
+      const alertPayload = { ...payload, alertType: 'certification_rejected' };
+
+      const saved = await this.notificationsService.create({
+        ownerId:    payload.ownerId,
+        businessId: payload.businessId,
+        alertType:  NotificationAlertType.CERTIFICATION_REJECTED,
+        payload:    alertPayload,
+      });
+
+      this.server.to(`business_${payload.businessId}`).emit('certification:rejected', {
+        ...alertPayload,
+        id:        saved.id,
+        timestamp: saved.createdAt.toISOString(),
+        isRead:    false,
+      });
+
+      this.logger.log(`Notificación certification_rejected enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+    } catch (err) {
+      this.logger.error('Error en handleCertificationRejected:', err);
+    }
+  }
 }

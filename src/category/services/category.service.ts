@@ -9,6 +9,8 @@ import { Category } from '../../shared/entities/category.entity';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 
 @Injectable()
 export class CategoryService {
@@ -51,6 +53,23 @@ export class CategoryService {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         `Error al crear la categoría: ${error.message}`,
+      );
+    }
+  }
+
+  async findAllAdmin(paginationDto: PaginationDto = {}) {
+    const { page = 1, limit = 15 } = paginationDto;
+    const skip = (page - 1) * limit;
+    try {
+      const [categories, total] = await this.categoryRepository.findAndCount({
+        order: { category: 'ASC' },
+        skip,
+        take: limit,
+      });
+      return createPaginationResponse(categories, total, page, limit);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error al obtener las categorías: ${error.message}`,
       );
     }
   }

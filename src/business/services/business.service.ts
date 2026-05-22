@@ -38,8 +38,8 @@ export class BusinessService {
   ) {}
 
   private sanitizePublicBusiness(business: Business) {
-    const { legal_document_url, is_legally_verified, ...rest } = business;
-    return rest as Business;
+    const { legal_document_url, is_legally_verified, user, ...rest } = business;
+    return { ...rest, owner_id: user?.id_usuario ?? null };
   }
 
   //Metodos publicos
@@ -109,7 +109,7 @@ export class BusinessService {
         status: BusinessStatus.ACTIVE,
         isActive: true,
       },
-      relations: ['category', 'tags', 'certifications'],
+      relations: ['category', 'tags', 'certifications', 'user'],
     });
 
     if (!business) {
