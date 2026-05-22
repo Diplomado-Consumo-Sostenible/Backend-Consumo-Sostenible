@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from '../services/category.service';
@@ -15,6 +16,7 @@ import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -55,6 +57,15 @@ export class CategoryController {
   @ApiResponse({ status: 404, description: 'No hay categorías registradas.' })
   findAll() {
     return this.categoryService.findAll();
+  }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Obtener categorías paginadas (admin)' })
+  @ApiResponse({ status: 200, description: 'Lista paginada de categorías.' })
+  findAllAdmin(@Query() paginationDto: PaginationDto) {
+    return this.categoryService.findAllAdmin(paginationDto);
   }
 
   @Get(':id')

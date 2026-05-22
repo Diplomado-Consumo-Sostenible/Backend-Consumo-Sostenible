@@ -27,8 +27,6 @@ import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 export class CertificationsController {
   constructor(private readonly certificationsService: CertificationsService) {}
 
-  //ENDPOINT PUBLICO
-  
   @Get('business/:businessId')
   @ApiOperation({ summary: 'Obtener certificaciones activas de un negocio (Público)' })
   @ApiResponse({ status: 200, description: 'Lista paginada de certificaciones activas' })
@@ -40,7 +38,6 @@ export class CertificationsController {
     return this.certificationsService.findActiveByBusiness(businessId, paginationDto);
   }
 
-  // ENDPOINT OWNER
 
   @Post()
   @ApiBearerAuth()
@@ -59,9 +56,28 @@ export class CertificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner')
-  @ApiOperation({ summary: 'Ver mis certificaciones enviadas (Solo Owner)' })
-  findMyCertifications(@CurrentUser() user: any) {
-    return this.certificationsService.findMyCertifications(user);
+  @ApiOperation({ summary: 'Ver mis certificaciones enviadas con paginación (Solo Owner)' })
+  findMyCertifications(
+    @CurrentUser() user: any,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.certificationsService.findMyCertifications(user, paginationDto);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('owner')
+  @ApiOperation({ summary: 'Editar y reenviar una certificación rechazada (Solo Owner)' })
+  @ApiResponse({ status: 200, description: 'Certificación actualizada y enviada a revisión.' })
+  @ApiResponse({ status: 400, description: 'Solo se pueden editar certificaciones rechazadas.' })
+  @ApiResponse({ status: 403, description: 'No tienes permiso para editar esta certificación.' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateCertificationDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.certificationsService.update(id, dto, user);
   }
 
   @Delete(':id')
@@ -72,8 +88,6 @@ export class CertificationsController {
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.certificationsService.remove(id, user);
   }
-
-  // ENDPOINT ADMIN
 
   @Get('admin/list')
   @ApiBearerAuth()

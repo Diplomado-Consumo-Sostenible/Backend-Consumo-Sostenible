@@ -15,6 +15,16 @@ export enum NotificationAlertType {
   SUSPICIOUS_REVIEW     = 'suspicious_review',
   NEGATIVE_REVIEW       = 'negative_review',
   WEEKLY_SUMMARY        = 'weekly_summary',
+  NEW_PRODUCT           = 'new_product',
+  REVIEW_HIDDEN         = 'review_hidden',
+  REVIEW_DELETED        = 'review_deleted',
+  REVIEW_RESTORED       = 'review_restored',
+  BUSINESS_CREATED          = 'business_created',
+  BUSINESS_APPROVED         = 'business_approved',
+  BUSINESS_REJECTED         = 'business_rejected',
+  BUSINESS_RESUBMITTED      = 'business_resubmitted',
+  CERTIFICATION_APPROVED    = 'certification_approved',
+  CERTIFICATION_REJECTED    = 'certification_rejected',
 }
 
 @Entity('notification')
@@ -22,7 +32,7 @@ export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  /** FK expuesta como columna para filtrar sin JOIN */
+
   @Column({ name: 'ownerId' })
   ownerId: number;
 

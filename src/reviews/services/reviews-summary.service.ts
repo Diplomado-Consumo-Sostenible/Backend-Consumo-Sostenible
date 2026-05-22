@@ -104,7 +104,7 @@ export class ReviewsSummaryService {
       ? Number((thisWeekReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(2))
       : 0;
 
-    // Tendencia: comparar % negativos con semana anterior
+
     const prevWeekStart = new Date(weekStart);
     prevWeekStart.setDate(prevWeekStart.getDate() - 7);
 
@@ -150,7 +150,6 @@ export class ReviewsSummaryService {
       rating: r.rating,
     }));
 
-    // Claude genera el insight narrativo de la semana
     const aiSummary = await this.aiService.generateWeeklySummary(
       business.businessName,
       stats,
@@ -214,7 +213,7 @@ export class ReviewsSummaryService {
       rating: r.rating,
     }));
 
-    // Ambas llamadas a Claude en paralelo
+
     const [generalReview, aiSummary] = await Promise.all([
       this.aiService.generateGeneralReview(business.businessName, reviewsData),
       this.aiService.generateWeeklySummary(
@@ -224,14 +223,14 @@ export class ReviewsSummaryService {
       ),
     ]);
 
-    // Persiste en la entidad Business (campo ya existe en la DB)
+
     const updatedAt = new Date();
     await this.businessRepository.update(businessId, {
       ai_reviews_summary: generalReview,
       ai_summary_updated_at: updatedAt,
     });
 
-    // Emite al frontend del negocio
+
     this.eventEmitter.emit('sentiment.general.summary', {
       businessId,
       businessName: business.businessName,

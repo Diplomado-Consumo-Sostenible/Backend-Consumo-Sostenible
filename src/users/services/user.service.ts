@@ -10,6 +10,8 @@ import { BusinessRepository } from 'src/shared/repositories/business.repository'
 import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
 import { ReviewRepository } from 'src/shared/repositories/review.repository';
+import { GetUsersFilterDto, UserSortBy } from '../dto/get-users-filter.dto';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 
 @Injectable()
 export class UserService {
@@ -41,24 +43,53 @@ export class UserService {
     });
   }
 
-  async findAll() {
-    return this.usuarioRepository.find({
-      relations: ['rol', 'perfil', 'perfil.genero'],
-      select: {
-        id_usuario: true,
-        email: true,
-        rol: { id: true, nombre: true },
-        perfil: {
-          nombre: true,
-          foto_perfil: true,
-          genero: {
-            id_genero: true,
-            nombre: true,
-          },
-        },
-        isActive: true,
-      },
-    });
+  async findAll(filterDto: GetUsersFilterDto = {}) {
+    const {
+      page    = 1,
+      limit   = 15,
+      rol,
+      sortBy  = UserSortBy.CREATED_AT,
+      order   = 'DESC',
+    } = filterDto;
+
+    const skip = (page - 1) * limit;
+
+    const qb = this.usuarioRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id_usuario',
+        'user.email',
+        'user.isActive',
+        'user.createdAt',
+      ])
+      .innerJoin('user.rol', 'rol')
+      .addSelect(['rol.id', 'rol.nombre'])
+      .leftJoin('user.perfil', 'perfil')
+      .addSelect(['perfil.nombre', 'perfil.foto_perfil'])
+      .leftJoin('perfil.genero', 'genero')
+      .addSelect(['genero.id_genero', 'genero.nombre']);
+
+    if (rol) {
+      qb.where('rol.nombre = :rol', { rol });
+    }
+
+    const sortField = sortBy === UserSortBy.EMAIL ? 'user.email' : 'user.createdAt';
+    qb.orderBy(sortField, order);
+    qb.skip(skip).take(limit);
+
+    const roleWhere = rol ? { rol: { nombre: rol } } : {};
+
+    const [[data, total], totalActive, totalInactive] = await Promise.all([
+      qb.getManyAndCount(),
+      this.usuarioRepository.count({ where: { isActive: true,  ...roleWhere } }),
+      this.usuarioRepository.count({ where: { isActive: false, ...roleWhere } }),
+    ]);
+
+    const base = createPaginationResponse(data, total, page, limit);
+    return {
+      ...base,
+      meta: { ...base.meta, totalActive, totalInactive },
+    };
   }
 
   async findOne(id: number) {

@@ -37,10 +37,6 @@ export class ReviewsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  /**
-   * Verifica umbrales de alerta y envía emails + emite eventos WebSocket.
-   * Se llama siempre que se crea o actualiza una reseña.
-   */
   private async checkAndSendBusinessAlerts(
     businessId: number,
     email: string,
@@ -53,8 +49,7 @@ export class ReviewsService {
     const CRITICAL_RATING = 3.5;
     const NEGATIVE_REVIEWS_LIMIT = 5;
 
-    // Alerta: promedio cayó por debajo de 3.5
-    if (oldAvg >= CRITICAL_RATING && newAvg < CRITICAL_RATING) {
+    if (newAvg > 0 && newAvg < CRITICAL_RATING && (oldAvg >= CRITICAL_RATING || oldAvg === 0)) {
       try {
         await this.mailService.sendCriticalRatingAlert(email, businessName, newAvg);
         this.eventEmitter.emit('sentiment.alert.critical_rating', {
@@ -67,7 +62,6 @@ export class ReviewsService {
       }
     }
 
-    // Alerta: múltiplo de 5 reseñas negativas en los últimos 30 días
     if (sentiment === ReviewSentiment.NEGATIVE) {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -162,16 +156,22 @@ export class ReviewsService {
 
     if (existingReview) throw new ConflictException('Ya calificaste este negocio.');
 
-    // Análisis IA: ahora retorna probabilidades + urgency además de sentiment y aiStars
     const aiResult = await this.aiService.analyzeSentiment(createReviewDto.comment);
 
     const starDifference = Math.abs(createReviewDto.rating - aiResult.aiStars);
-    const isSuspicious = starDifference >= 3;
+
+    if (starDifference >= 3) {
+      throw new BadRequestException({
+        message: 'Tu reseña parece incongruente entre la calificación dada y el contenido del comentario.',
+        code: 'SUSPICIOUS_REVIEW',
+        aiStars: aiResult.aiStars,
+      });
+    }
 
     const newReview = this.reviewRepository.create({
       ...createReviewDto,
       sentiment: aiResult.sentiment,
-      is_suspicious: isSuspicious,
+      is_suspicious: false,
       user: { id_usuario: user.id_usuario },
       business: { id_business: businessId },
     });
@@ -180,7 +180,6 @@ export class ReviewsService {
 
     const { oldAvg, newAvg } = await this.updateBusinessRating(businessId);
 
-    // Payload base para todos los eventos WebSocket de esta reseña
     const notificationPayload: SentimentNotificationDto = {
       businessId,
       businessName: business.businessName,
@@ -191,18 +190,11 @@ export class ReviewsService {
       urgency: aiResult.urgency,
       comment: createReviewDto.comment,
       timestamp: new Date(),
-      isSuspicious,
+      isSuspicious: false,
     };
 
-    // Evento principal: siempre se emite → panel en vivo del frontend
     this.eventEmitter.emit('sentiment.review.created', notificationPayload);
 
-    // Evento sospechosa: reseña con incongruencia alta entre score usuario e IA
-    if (isSuspicious) {
-      this.eventEmitter.emit('sentiment.review.suspicious', notificationPayload);
-    }
-
-    // Alertas de umbral (email + WebSocket)
     if (business.user?.email) {
       await this.checkAndSendBusinessAlerts(
         businessId,
@@ -215,11 +207,7 @@ export class ReviewsService {
       );
     }
 
-    return {
-      message: isSuspicious
-        ? 'Tu reseña fue publicada, pero ha sido marcada para revisión por incongruencia.'
-        : 'Reseña creada con éxito.',
-    };
+    return { message: 'Reseña creada con éxito.' };
   }
 
   async getBusinessReviews(businessId: number, filterDto: GetBusinessReviewsFilterDto) {
@@ -336,8 +324,16 @@ export class ReviewsService {
       aiResult = await this.aiService.analyzeSentiment(textToAnalyze);
       const starDifference = Math.abs(currentRating - aiResult.aiStars);
 
+      if (starDifference >= 3) {
+        throw new BadRequestException({
+          message: 'Tu reseña parece incongruente entre la calificación y el contenido del comentario.',
+          code: 'SUSPICIOUS_REVIEW',
+          aiStars: aiResult.aiStars,
+        });
+      }
+
       review.sentiment = aiResult.sentiment;
-      review.is_suspicious = starDifference >= 3;
+      review.is_suspicious = false;
     }
 
     Object.assign(review, updateReviewDto);
@@ -378,11 +374,7 @@ export class ReviewsService {
       }
     }
 
-    return {
-      message: review.is_suspicious
-        ? 'Reseña actualizada, pero ha sido marcada para revisión por incongruencia.'
-        : 'Reseña actualizada correctamente.',
-    };
+    return { message: 'Reseña actualizada correctamente.' };
   }
 
   async deleteReview(reviewId: number, user: any) {

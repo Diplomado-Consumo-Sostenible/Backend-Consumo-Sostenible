@@ -5,16 +5,16 @@ import {
   InternalServerErrorException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateReviewReportDto } from '../dto/create-review-report.dto';
 import { ReviewsService } from './reviews.service';
 import { ReviewRepository } from 'src/shared/repositories/review.repository';
 import { ReviewReportRepository } from 'src/shared/repositories/review-report.repository';
-import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 import { MoreThanOrEqual } from 'typeorm';
-import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 import { ModerationAction, ResolveReportDto } from '../dto/resolve-report.dto';
 import { ReportStatus } from 'src/shared/entities/review-report.entity';
 import { ReviewBlockRepository } from 'src/shared/repositories/review-block.repository';
+import { UserRepository } from 'src/shared/repositories/user.repository';
 import { MailService } from 'src/mail/mail.service';
 import { GetReportedReviewsFilterDto } from '../dto/get-reported-reviews-filter.dto';
 
@@ -22,12 +22,16 @@ import { GetReportedReviewsFilterDto } from '../dto/get-reported-reviews-filter.
 export class ReviewsReportService {
   private readonly AUTO_HIDE_THRESHOLD = 3; 
 
+  private readonly BAN_THRESHOLD = 3;
+
   constructor(
     private readonly reportRepository: ReviewReportRepository,
     private readonly reviewRepository: ReviewRepository,
     private readonly reviewsService: ReviewsService,
     private readonly blockRepository: ReviewBlockRepository,
+    private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async reportReview(reviewId: number, user: any, dto: CreateReviewReportDto) {
@@ -64,12 +68,19 @@ export class ReviewsReportService {
 
       if (wasAutoHidden) {
         await this.reviewsService.updateBusinessRating(review.business.id_business);
+
+        this.eventEmitter.emit('review.hidden', {
+          reviewAuthorId: review.user.id_usuario,
+          reviewId:       review.id_review,
+          businessId:     review.business.id_business,
+          businessName:   review.business.businessName,
+        });
       }
 
-      return { 
-        message: wasAutoHidden 
+      return {
+        message: wasAutoHidden
           ? 'Gracias por tu reporte. Esta reseña ha recibido múltiples quejas y ha sido ocultada temporalmente mientras un administrador la revisa.'
-          : 'Reporte enviado exitosamente. Un administrador lo revisará.' 
+          : 'Reporte enviado exitosamente. Un administrador lo revisará.'
       };
 
     } catch (error) {
@@ -83,13 +94,16 @@ export class ReviewsReportService {
   async getReportedReviews(filterDto: GetReportedReviewsFilterDto) {
     const { page = 1, limit = 10, reason } = filterDto;
     const skip = (page - 1) * limit;
-    
+
+    const totalGlobal = await this.reviewRepository
+      .createQueryBuilder('review')
+      .where('review.report_count >= :min', { min: 1 })
+      .getCount();
+
     const whereCondition: any = { report_count: MoreThanOrEqual(1) };
-
     if (reason) {
-      whereCondition.reports = { reason: reason };
+      whereCondition.reports = { reason };
     }
-
 
     const [reviews, total] = await this.reviewRepository.findAndCount({
       where: whereCondition,
@@ -99,36 +113,49 @@ export class ReviewsReportService {
       take: limit,
     });
 
-    if (total === 0) throw new NotFoundException('No se encontraron reseñas con esos criterios.');
+    if (total === 0) {
+      return {
+        data: [],
+        meta: { total: 0, totalGlobal, page, totalPages: 1 },
+      };
+    }
 
     const formattedData = reviews.map(r => ({
-      id_review: r.id_review,
-      rating: r.rating,
-      comment: r.comment,
-      sentiment: r.sentiment,
-      is_suspicious: r.is_suspicious,
-      report_count: r.report_count,
+      id_review:               r.id_review,
+      rating:                  r.rating,
+      comment:                 r.comment,
+      sentiment:               r.sentiment,
+      is_suspicious:           r.is_suspicious,
+      report_count:            r.report_count,
       is_hidden_by_moderation: r.is_hidden_by_moderation,
-      created_at: r.created_at,
+      created_at:              r.created_at,
       user: {
         id_usuario: r.user.id_usuario,
-        email: r.user.email,
+        email:      r.user.email,
       },
       business: {
-        id_business: r.business.id_business,
+        id_business:  r.business.id_business,
         businessName: r.business.businessName,
       },
       reports: r.reports.map(rep => ({
-        id_report: rep.id_report,
-        reason: rep.reason,
-        details: rep.details,
-        created_at: rep.created_at,
-        reporter_email: rep.user.email
-      }))
+        id_report:      rep.id_report,
+        reason:         rep.reason,
+        details:        rep.details,
+        created_at:     rep.created_at,
+        reporter_email: rep.user.email,
+      })),
     }));
 
-    return createPaginationResponse(formattedData, total, page, limit);
-    }
+    return {
+      data: formattedData,
+      meta: {
+        total,
+        totalGlobal,
+        page,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
 async moderateReview(reviewId: number, dto: ResolveReportDto) {
     const review = await this.reviewRepository.findOne({
@@ -142,35 +169,66 @@ async moderateReview(reviewId: number, dto: ResolveReportDto) {
     const userEmail = review.user.email;
 
     if (dto.action === ModerationAction.DELETE) {
+      const reviewAuthorId = review.user.id_usuario;
+      const businessName   = review.business.businessName;
+
       const block = this.blockRepository.create({
-        user: { id_usuario: review.user.id_usuario },
-        business: { id_business: businessId }
+        user:     { id_usuario: reviewAuthorId },
+        business: { id_business: businessId },
       });
       await this.blockRepository.save(block);
-    
+
+      const penaltyCount = await this.blockRepository.count({
+        where: { user: { id_usuario: reviewAuthorId } },
+      });
+
+      const isBanned = penaltyCount >= this.BAN_THRESHOLD;
+      if (isBanned) {
+        await this.userRepository.update(
+          { id_usuario: reviewAuthorId },
+          { isActive: false },
+        );
+      }
+
       await this.reviewRepository.remove(review);
       await this.reviewsService.updateBusinessRating(businessId);
 
+      this.eventEmitter.emit('review.deleted_by_moderation', {
+        reviewAuthorId,
+        reviewId,
+        businessId,
+        businessName,
+        penaltyCount,
+        isBanned,
+      });
+
       try {
-        await this.mailService.sendReviewDeletedAlert(userEmail, review.business.businessName);
+        await this.mailService.sendReviewDeletedAlert(userEmail, businessName);
       } catch (error) {
         console.error(`No se pudo enviar correo de penalización a ${userEmail}:`, error);
       }
     } 
     else if (dto.action === ModerationAction.RESTORE) {
+      const reviewAuthorId = review.user.id_usuario;
+      const businessName   = review.business.businessName;
 
       review.is_hidden_by_moderation = false;
       review.report_count = 0;
       await this.reviewRepository.save(review);
 
-
       await this.reportRepository.update(
         { review: { id_review: reviewId } },
-        { status: ReportStatus.DISMISSED }
+        { status: ReportStatus.DISMISSED },
       );
 
-
       await this.reviewsService.updateBusinessRating(businessId);
+
+      this.eventEmitter.emit('review.restored_by_moderation', {
+        reviewAuthorId,
+        reviewId,
+        businessId,
+        businessName,
+      });
     }
 
     return { 

@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailService } from 'src/mail/mail.service';
 import { User } from 'src/shared/entities/user.entity';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
@@ -33,11 +34,12 @@ export class BusinessService {
     private readonly mailService: MailService,
     private readonly userRepository: UserRepository,
     private readonly roleRepository: RolRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private sanitizePublicBusiness(business: Business) {
-    const { legal_document_url, is_legally_verified, ...rest } = business;
-    return rest as Business;
+    const { legal_document_url, is_legally_verified, user, ...rest } = business;
+    return { ...rest, owner_id: user?.id_usuario ?? null };
   }
 
   //Metodos publicos
@@ -107,7 +109,7 @@ export class BusinessService {
         status: BusinessStatus.ACTIVE,
         isActive: true,
       },
-      relations: ['category', 'tags', 'certifications'],
+      relations: ['category', 'tags', 'certifications', 'user'],
     });
 
     if (!business) {
@@ -270,6 +272,13 @@ export class BusinessService {
         }
       }
       await this.mailService.sendBusinessWelcome(user.email, savedBusiness.businessName);
+
+      this.eventEmitter.emit('business.created', {
+        ownerId:      user.id_usuario,
+        businessId:   savedBusiness.id_business,
+        businessName: savedBusiness.businessName,
+      });
+
       return { message: 'Negocio ' + savedBusiness.businessName + ' creado exitosamente y pendiente de revisión por un administrador' };
 
     } catch (error) {
@@ -345,9 +354,17 @@ export class BusinessService {
       await this.mailService.sendBusinessResubmitted(business.user.email, business.businessName);
     }
 
-    return { 
-      message: 'Negocio ' + business.businessName + ' actualizado exitosamente' + 
-      (wasResubmitted ? ' y enviado nuevamente a revisión.' : '') 
+    if (wasResubmitted && business.user?.id_usuario) {
+      this.eventEmitter.emit('business.resubmitted', {
+        ownerId:      business.user.id_usuario,
+        businessId:   business.id_business,
+        businessName: business.businessName,
+      });
+    }
+
+    return {
+      message: 'Negocio ' + business.businessName + ' actualizado exitosamente' +
+      (wasResubmitted ? ' y enviado nuevamente a revisión.' : ''),
     };
 
   }
@@ -400,12 +417,31 @@ export class BusinessService {
 
     if (business.user?.email) {
       await this.mailService.sendBusinessStatusChange(
-        business.user.email, 
+        business.user.email,
         business.businessName,
         status,
         business.rejectionReason || undefined,
       );
     }
+
+    const ownerId = business.user?.id_usuario;
+    if (ownerId) {
+      if (status === BusinessStatus.ACTIVE) {
+        this.eventEmitter.emit('business.approved', {
+          ownerId,
+          businessId:   updatedBusiness.id_business,
+          businessName: updatedBusiness.businessName,
+        });
+      } else if (status === BusinessStatus.REJECTED) {
+        this.eventEmitter.emit('business.rejected', {
+          ownerId,
+          businessId:      updatedBusiness.id_business,
+          businessName:    updatedBusiness.businessName,
+          rejectionReason: updatedBusiness.rejectionReason,
+        });
+      }
+    }
+
     return {
       message: `El estado del negocio ${updatedBusiness.businessName} ha sido cambiado a ${status}`
     };

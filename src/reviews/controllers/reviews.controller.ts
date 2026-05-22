@@ -63,6 +63,17 @@ export class ReviewsController {
     return this.reviewsService.getSuspiciousReviews(paginationDto);
   }
   
+  @Get('my-review/business/:businessId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener mi reseña para un negocio específico' })
+  getMyReviewForBusiness(
+    @Param('businessId', ParseIntPipe) businessId: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.reviewsService.getMyReviewForBusiness(businessId, user);
+  }
+
   @Get('business/:businessId')
   @ApiOperation({ summary: 'Listar las reseñas de un negocio con paginación (Público)' })
   getBusinessReviews(

@@ -17,7 +17,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
-import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+import { GetProductsFilterDto } from '../dto/get-products-filter.dto';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('product')
@@ -31,9 +31,9 @@ export class ProductController {
   @ApiResponse({ status: 404, description: 'Negocio no encontrado o sin productos' })
   findAllByBusiness(
     @Param('businessId', ParseIntPipe) businessId: number,
-    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: GetProductsFilterDto,
   ) {
-    return this.productService.findAllByBusiness(businessId, paginationDto);
+    return this.productService.findAllByBusiness(businessId, filterDto);
   }
 
   // --- RUTAS PROTEGIDAS ---

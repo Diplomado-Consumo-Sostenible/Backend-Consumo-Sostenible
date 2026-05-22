@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 
@@ -23,6 +24,7 @@ import {
 import { TagsService } from '../services/tags.service';
 import { CreateTagDto } from '../dto/create-tags';
 import { UpdateTagDto } from '../dto/update-tags';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
 @ApiTags('tags')
 @ApiBearerAuth()
@@ -55,6 +57,15 @@ export class TagsController {
   })
   findAll() {
     return this.tagService.findAll();
+  }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Obtener tags paginados (admin)' })
+  @ApiResponse({ status: 200, description: 'Lista paginada de tags.' })
+  findAllAdmin(@Query() paginationDto: PaginationDto) {
+    return this.tagService.findAllAdmin(paginationDto);
   }
 
   @Get(':id')

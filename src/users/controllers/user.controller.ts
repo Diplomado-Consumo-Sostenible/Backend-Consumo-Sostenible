@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
 import { Roles } from 'src/auth/decorator/roles.decorator';
@@ -23,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { UpdateUsuarioDto } from '../dto/Update-usuario.dto';
+import { GetUsersFilterDto } from '../dto/get-users-filter.dto';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
@@ -36,10 +38,10 @@ export class UserController {
 
   @Get()
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Obtener todos los usuarios' })
+  @ApiOperation({ summary: 'Obtener usuarios con filtros y paginación' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de usuarios obtenida exitosamente.',
+    description: 'Lista paginada de usuarios obtenida exitosamente.',
   })
   @ApiResponse({
     status: 401,
@@ -49,8 +51,8 @@ export class UserController {
     status: 403,
     description: 'Prohibido. Requiere rol de administrador.',
   })
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Query() filterDto: GetUsersFilterDto) {
+    return this.userService.findAll(filterDto);
   }
 
   @Get(':id')
@@ -144,7 +146,6 @@ export class UserController {
     return this.userService.remove(id, user);
   }
 
-  // Estos endpoints los puede usar cualquier rol autenticado
   @Patch('me/password')
   @Roles('ADMIN', 'owner', 'USER')
   @ApiOperation({ summary: 'Cambiar mi contraseña' })

@@ -8,6 +8,8 @@ import { Tag } from '../../shared/entities/tags.entity';
 import { CreateTagDto } from '../dto/create-tags';
 import { UpdateTagDto } from '../dto/update-tags';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
+import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
+import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
 
 @Injectable()
 export class TagsService {
@@ -45,6 +47,23 @@ export class TagsService {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
         `Error al crear el tag: ${error.message}`,
+      );
+    }
+  }
+
+  async findAllAdmin(paginationDto: PaginationDto = {}) {
+    const { page = 1, limit = 15 } = paginationDto;
+    const skip = (page - 1) * limit;
+    try {
+      const [tags, total] = await this.tagRepository.findAndCount({
+        order: { tag: 'ASC' },
+        skip,
+        take: limit,
+      });
+      return createPaginationResponse(tags, total, page, limit);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error al obtener los tags: ${error.message}`,
       );
     }
   }
