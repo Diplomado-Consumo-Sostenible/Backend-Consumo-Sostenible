@@ -1,0 +1,45 @@
+# Dependencias (se instalan dentro del contenedor)
+node_modules/
+
+# Salida compilada anterior
+dist/
+build/
+
+# Git
+.git/
+.github/
+
+# Variables de entorno con secretos
+.env
+.env.*
+!.env.example
+
+# Cobertura de tests
+coverage/
+.nyc_output/
+
+# IDEs y editores
+.vscode/
+.idea/
+*.sublime-workspace
+.settings/
+
+# Datos de volúmenes locales de Docker
+docker-data/
+
+# Archivos temporales y logs
+.temp/
+.tmp/
+pids/
+*.log
+npm-debug.log*
+*.pid
+*.seed
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reportes de diagnóstico de Node
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
