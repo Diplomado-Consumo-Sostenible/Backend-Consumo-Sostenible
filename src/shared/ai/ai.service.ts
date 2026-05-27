@@ -32,10 +32,10 @@ export class AiService {
   private readonly GEMINI_MODEL = 'gemini-flash-lite-latest';
 
   constructor(private configService: ConfigService) {
-    this.AI_API_URL     = this.configService.get<string>('AI_API_URL') || '';
-    this.GEMINI_API_KEY = this.configService.get<string>('GEMINI_API_KEY') || '';
+    this.AI_API_URL = this.configService.get<string>('AI_API_URL') || '';
+    this.GEMINI_API_KEY =
+      this.configService.get<string>('GEMINI_API_KEY') || '';
   }
-
 
   private calculateUrgency(
     probabilidades: AiProbabilidades,
@@ -43,7 +43,7 @@ export class AiService {
   ): NotificationUrgency {
     if (sentiment === ReviewSentiment.NEGATIVE) {
       if (probabilidades.negativo > 0.75) return 'high';
-      if (probabilidades.negativo > 0.5)  return 'medium';
+      if (probabilidades.negativo > 0.5) return 'medium';
     }
     return 'low';
   }
@@ -59,7 +59,9 @@ export class AiService {
       });
 
       if (!response.ok) {
-        throw new Error(`Error API IA: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Error API IA: ${response.status} ${response.statusText}`,
+        );
       }
 
       const data = await response.json();
@@ -71,7 +73,7 @@ export class AiService {
       const probabilidades: AiProbabilidades = {
         positivo: data.probabilidades?.positivo ?? 0,
         negativo: data.probabilidades?.negativo ?? 0,
-        neutro:   data.probabilidades?.neutro   ?? 1,
+        neutro: data.probabilidades?.neutro ?? 1,
       };
 
       return {
@@ -81,7 +83,9 @@ export class AiService {
         urgency: this.calculateUrgency(probabilidades, sentiment),
       };
     } catch (error) {
-      this.logger.error(`Fallo al analizar sentimiento: ${error.message}`);
+      this.logger.error(
+        `Fallo al analizar sentimiento: ${(error as Error).message}`,
+      );
       return {
         sentiment: ReviewSentiment.NEUTRAL,
         aiStars: 3,
@@ -91,7 +95,6 @@ export class AiService {
     }
   }
 
-
   private async callGemini(prompt: string, maxTokens = 700): Promise<string> {
     if (!this.GEMINI_API_KEY) {
       return 'Resumen no disponible: agrega GEMINI_API_KEY al archivo .env';
@@ -100,7 +103,7 @@ export class AiService {
     try {
       // 1. Inicializas el cliente con tu llave
       const genAI = new GoogleGenerativeAI(this.GEMINI_API_KEY);
-      
+
       // 2. Llamas al modelo usando la variable de la clase
       const model = genAI.getGenerativeModel({ model: this.GEMINI_MODEL });
 
@@ -112,28 +115,35 @@ export class AiService {
 
       return result.response.text();
     } catch (error) {
-      this.logger.error(`Error llamando a Gemini SDK: ${error.message}`);
+      this.logger.error(
+        `Error llamando a Gemini SDK: ${(error as Error).message}`,
+      );
       return 'Error al generar el resumen con IA.';
     }
   }
-
 
   async generateWeeklySummary(
     businessName: string,
     stats: WeeklySummaryStatsDto,
     topComments: ReviewSampleDto[],
   ): Promise<string> {
-    const pctPos = stats.total > 0 ? Math.round((stats.positive / stats.total) * 100) : 0;
-    const pctNeg = stats.total > 0 ? Math.round((stats.negative / stats.total) * 100) : 0;
-    const pctNeu = stats.total > 0 ? Math.round((stats.neutral  / stats.total) * 100) : 0;
+    const pctPos =
+      stats.total > 0 ? Math.round((stats.positive / stats.total) * 100) : 0;
+    const pctNeg =
+      stats.total > 0 ? Math.round((stats.negative / stats.total) * 100) : 0;
+    const pctNeu =
+      stats.total > 0 ? Math.round((stats.neutral / stats.total) * 100) : 0;
 
     const trendLabel =
-      stats.trend === 'improving' ? '📈 Mejorando' :
-      stats.trend === 'declining' ? '📉 Empeorando' : '➡️ Estable';
+      stats.trend === 'improving'
+        ? '📈 Mejorando'
+        : stats.trend === 'declining'
+          ? '📉 Empeorando'
+          : '➡️ Estable';
 
     const sampleText = topComments
       .slice(0, 10)
-      .map(c => `[${c.sentiment} ${c.rating}★] ${c.comment}`)
+      .map((c) => `[${c.sentiment} ${c.rating}★] ${c.comment}`)
       .join('\n');
 
     const prompt = `Eres un analista de experiencia de cliente para EcoVida, plataforma de negocios sostenibles.
@@ -174,22 +184,28 @@ Máximo 200 palabras. Tono profesional pero accesible.`;
     return this.callGemini(prompt, 700);
   }
 
-
   async generateGeneralReview(
     businessName: string,
     allReviews: ReviewSampleDto[],
   ): Promise<string> {
-    if (allReviews.length === 0) return 'Sin reseñas disponibles para generar resumen.';
+    if (allReviews.length === 0)
+      return 'Sin reseñas disponibles para generar resumen.';
 
-    const total      = allReviews.length;
-    const avgRating  = (allReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(2);
-    const positive   = allReviews.filter(r => r.sentiment === 'Positive').length;
-    const negative   = allReviews.filter(r => r.sentiment === 'Negative').length;
-    const neutral    = allReviews.filter(r => r.sentiment === 'Neutral').length;
+    const total = allReviews.length;
+    const avgRating = (
+      allReviews.reduce((s, r) => s + r.rating, 0) / total
+    ).toFixed(2);
+    const positive = allReviews.filter(
+      (r) => r.sentiment === 'Positive',
+    ).length;
+    const negative = allReviews.filter(
+      (r) => r.sentiment === 'Negative',
+    ).length;
+    const neutral = allReviews.filter((r) => r.sentiment === 'Neutral').length;
 
-    const sample     = allReviews.slice(0, 30);
+    const sample = allReviews.slice(0, 30);
     const sampleText = sample
-      .map(c => `[${c.sentiment} ${c.rating}★] ${c.comment}`)
+      .map((c) => `[${c.sentiment} ${c.rating}★] ${c.comment}`)
       .join('\n');
 
     const prompt = `Eres un sistema de síntesis de opiniones para EcoVida.

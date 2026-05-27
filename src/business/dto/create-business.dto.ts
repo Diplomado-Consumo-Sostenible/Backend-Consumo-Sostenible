@@ -39,10 +39,11 @@ export class CreateBusinessDto {
 
   @ApiPropertyOptional({
     description: 'URL del documento legal (PDF)',
-    example: 'https://res.cloudinary.com/tu-app/image/upload/v1/legal_document.pdf',
+    example:
+      'https://res.cloudinary.com/tu-app/image/upload/v1/legal_document.pdf',
   })
   @IsUrl({}, { each: true })
-  legal_document_url: string ;
+  legal_document_url: string;
 
   @ApiPropertyOptional({
     description: 'Arreglo de URLs con imágenes del local o productos',
@@ -51,7 +52,7 @@ export class CreateBusinessDto {
   })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true }) 
+  @IsString({ each: true })
   images?: string[];
 
   @ApiPropertyOptional({
@@ -127,7 +128,7 @@ export class CreateBusinessDto {
   @IsUrl()
   facebookUrl?: string;
 
-    @ApiPropertyOptional({
+  @ApiPropertyOptional({
     description: 'URL del perfil de X (anteriormente Twitter)',
     example: 'https://x.com/ecoburger',
   })
@@ -147,7 +148,6 @@ export class CreateBusinessDto {
   @IsObject()
   schedule?: Record<string, string>;
 
-
   @ApiProperty({
     description: 'ID de la categoría a la que pertenece',
     example: 1,
@@ -166,4 +166,12 @@ export class CreateBusinessDto {
   @IsArray()
   @IsNumber({}, { each: true })
   tagIds?: number[];
+
+  @ApiPropertyOptional({
+    description: 'ID del municipio donde se ubica el negocio',
+    example: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  municipioId?: number;
 }

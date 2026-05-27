@@ -6,13 +6,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 import { Review } from './review.entity';
 import { ReviewReport } from './review-report.entity';
@@ -42,7 +40,7 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @CreateDateColumn({type: 'timestamptz'})
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
   @ManyToOne(() => Rol, (rol) => rol.users)
@@ -70,4 +68,3 @@ export class User {
   @OneToMany(() => Notification, (notification) => notification.owner)
   notifications: Notification[];
 }
-

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { CreateUsuarioDto } from 'src/users/dto/create-usuario.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -17,11 +25,9 @@ export class AuthController {
     private readonly configService: ConfigService,
   ) {}
 
-  
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  async googleAuth(@Req() req) {
-  }
+  async googleAuth(@Req() _req) {}
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
@@ -29,10 +35,11 @@ export class AuthController {
     const rolId = req.query.state ? Number(req.query.state) : 2;
     const tokenResponse = await this.authService.googleLogin(req.user, rolId);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-  
-    res.redirect(`${frontendUrl}/auth/callback?token=${tokenResponse.access_token}`);
-  }
 
+    res.redirect(
+      `${frontendUrl}/auth/callback?token=${tokenResponse.access_token}`,
+    );
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
@@ -53,15 +60,24 @@ export class AuthController {
 
   @Post('request-password-reset')
   @ApiOperation({ summary: 'Solicitar restablecimiento de contraseña' })
-  @ApiResponse({ status: 200, description: 'OTP enviado al correo electrónico.' })
-  @ApiResponse({ status: 400, description: 'Error al solicitar el restablecimiento de contraseña.' })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP enviado al correo electrónico.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error al solicitar el restablecimiento de contraseña.',
+  })
   async requestReset(@Body() dto: RequestPasswordResetDto) {
     return this.authService.requestPasswordReset(dto.email);
   }
 
   @Post('resend-password-reset')
   @ApiOperation({ summary: 'Reenviar OTP para restablecimiento de contraseña' })
-  @ApiResponse({ status: 200, description: 'OTP reenviado al correo electrónico.' })
+  @ApiResponse({
+    status: 200,
+    description: 'OTP reenviado al correo electrónico.',
+  })
   @ApiResponse({ status: 400, description: 'Error al reenviar el OTP.' })
   async resendPasswordReset(@Body() dto: ResendPasswordResetDto) {
     return this.authService.resendPasswordResetOtp(dto.email);
@@ -69,8 +85,14 @@ export class AuthController {
 
   @Post('reset-password')
   @ApiOperation({ summary: 'Restablecer contraseña' })
-  @ApiResponse({ status: 200, description: 'Contraseña restablecida exitosamente.' })
-  @ApiResponse({ status: 400, description: 'Error al restablecer la contraseña.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña restablecida exitosamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error al restablecer la contraseña.',
+  })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.otp, dto.newPassword);
   }

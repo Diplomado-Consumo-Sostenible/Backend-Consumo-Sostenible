@@ -20,7 +20,6 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 
-
 @ApiTags('generos')
 @Controller('genero')
 export class GeneroController {
@@ -38,9 +37,12 @@ export class GeneroController {
 
   @Get()
   @ApiOperation({ summary: 'Obtener una lista paginada de géneros' })
-  @ApiResponse({ status: 200, description: 'Lista de géneros obtenida exitosamente.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de géneros obtenida exitosamente.',
+  })
   @ApiResponse({ status: 400, description: 'Error al obtener los géneros.' })
-  findAll(@Query(new ValidationPipe()) paginationDto: PaginationDto,) {
+  findAll(@Query(new ValidationPipe()) paginationDto: PaginationDto) {
     return this.generoService.findAll(paginationDto);
   }
 

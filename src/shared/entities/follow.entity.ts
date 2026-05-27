@@ -4,7 +4,7 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
-  Unique
+  Unique,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Business } from './business.entity';
@@ -26,6 +26,6 @@ export class Follow {
   @JoinColumn({ name: 'followedBusinessId' })
   followedBusiness!: Business;
 
-  @CreateDateColumn({type: 'timestamptz'})
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

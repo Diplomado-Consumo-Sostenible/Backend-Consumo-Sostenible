@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Certification } from '../entities/certifications.entity';
 
-
 @Injectable()
 export class CertificationRepository extends Repository<Certification> {
   constructor(dataSource: DataSource) {

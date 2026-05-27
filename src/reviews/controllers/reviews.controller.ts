@@ -15,7 +15,12 @@ import { CreateReviewDto } from '../dto/create-review.dto';
 import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { UpdateReviewDto } from '../dto/update-review.dto';
 import { GetBusinessReviewsFilterDto } from '../dto/get-business-reviews-filter.dto';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
@@ -31,7 +36,10 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear una nueva reseña para un negocio' })
   @ApiResponse({ status: 201, description: 'Reseña creada' })
-  @ApiResponse({ status: 409, description: 'El usuario ya calificó este negocio' })
+  @ApiResponse({
+    status: 409,
+    description: 'El usuario ya calificó este negocio',
+  })
   createReview(
     @Param('businessId', ParseIntPipe) businessId: number,
     @Body() createReviewDto: CreateReviewDto,
@@ -54,7 +62,7 @@ export class ReviewsController {
   @Get('suspicious')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN') 
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Ver reseñas sospechosas' })
   getSuspiciousReviews(
     @CurrentUser() user: any,
@@ -62,7 +70,7 @@ export class ReviewsController {
   ) {
     return this.reviewsService.getSuspiciousReviews(paginationDto);
   }
-  
+
   @Get('my-review/business/:businessId')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -75,7 +83,9 @@ export class ReviewsController {
   }
 
   @Get('business/:businessId')
-  @ApiOperation({ summary: 'Listar las reseñas de un negocio con paginación (Público)' })
+  @ApiOperation({
+    summary: 'Listar las reseñas de un negocio con paginación (Público)',
+  })
   getBusinessReviews(
     @Param('businessId', ParseIntPipe) businessId: number,
     @Query() filterDto: GetBusinessReviewsFilterDto,

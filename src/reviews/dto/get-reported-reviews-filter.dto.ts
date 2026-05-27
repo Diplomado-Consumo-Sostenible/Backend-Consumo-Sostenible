@@ -4,11 +4,11 @@ import { ReportReason } from 'src/shared/entities/review-report.entity';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GetReportedReviewsFilterDto extends PaginationDto {
-    @ApiPropertyOptional({
-    enum: ReportReason, 
-    description: 'Filtra las reseñas por el motivo específico del reporte'
-    })
-    @IsOptional()
-    @IsEnum(ReportReason, { message: 'El motivo del reporte no es válido' })
-    reason?: ReportReason;
+  @ApiPropertyOptional({
+    enum: ReportReason,
+    description: 'Filtra las reseñas por el motivo específico del reporte',
+  })
+  @IsOptional()
+  @IsEnum(ReportReason, { message: 'El motivo del reporte no es válido' })
+  reason?: ReportReason;
 }

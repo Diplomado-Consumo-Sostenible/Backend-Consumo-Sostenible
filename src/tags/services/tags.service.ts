@@ -13,9 +13,7 @@ import { createPaginationResponse } from 'src/shared/pagination/pagination.helpe
 
 @Injectable()
 export class TagsService {
-  constructor(
-    private readonly tagRepository: TagsRepository,
-  ) {}
+  constructor(private readonly tagRepository: TagsRepository) {}
 
   async create(createTagDto: CreateTagDto): Promise<any> {
     try {
@@ -46,7 +44,7 @@ export class TagsService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
-        `Error al crear el tag: ${error.message}`,
+        `Error al crear el tag: ${(error as Error).message}`,
       );
     }
   }
@@ -63,7 +61,7 @@ export class TagsService {
       return createPaginationResponse(tags, total, page, limit);
     } catch (error) {
       throw new InternalServerErrorException(
-        `Error al obtener los tags: ${error.message}`,
+        `Error al obtener los tags: ${(error as Error).message}`,
       );
     }
   }
@@ -84,7 +82,7 @@ export class TagsService {
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
-        `Error al obtener los tags: ${error.message}`,
+        `Error al obtener los tags: ${(error as Error).message}`,
       );
     }
   }
@@ -111,7 +109,7 @@ export class TagsService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al buscar el tag: ${error.message}`,
+        `Error al buscar el tag: ${(error as Error).message}`,
       );
     }
   }
@@ -158,7 +156,7 @@ export class TagsService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al actualizar el tag: ${error.message}`,
+        `Error al actualizar el tag: ${(error as Error).message}`,
       );
     }
   }
@@ -177,7 +175,7 @@ export class TagsService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al eliminar el tag: ${error.message}`,
+        `Error al eliminar el tag: ${(error as Error).message}`,
       );
     }
   }

@@ -30,7 +30,7 @@ import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
 
 @ApiTags('user')
-@ApiBearerAuth() 
+@ApiBearerAuth()
 @Controller('user')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
@@ -117,17 +117,32 @@ export class UserController {
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Crear un nuevo usuario (Solo Admin)' })
   @ApiResponse({ status: 201, description: 'Usuario creado exitosamente.' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o correo duplicado.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos inválidos o correo duplicado.',
+  })
   create(@Body() createUsuarioDto: CreateUsuarioDto) {
     return this.userService.create(createUsuarioDto);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'owner', 'USER') 
-  @ApiOperation({ summary: 'Actualizar un usuario (Admin o el propio usuario)' })
-  @ApiParam({ name: 'id', description: 'ID del usuario a modificar', type: 'number' })
-  @ApiResponse({ status: 200, description: 'Usuario actualizado exitosamente.' })
-  @ApiResponse({ status: 403, description: 'Prohibido. No puedes editar a otro usuario.' })
+  @Roles('ADMIN', 'owner', 'USER')
+  @ApiOperation({
+    summary: 'Actualizar un usuario (Admin o el propio usuario)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del usuario a modificar',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario actualizado exitosamente.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Prohibido. No puedes editar a otro usuario.',
+  })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUsuarioDto: UpdateUsuarioDto,
@@ -137,10 +152,20 @@ export class UserController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN', 'owner', 'USER') 
-  @ApiOperation({ summary: 'Eliminar cuenta de usuario permanentemente (Admin o el propio usuario)' })
-  @ApiParam({ name: 'id', description: 'ID del usuario a eliminar', type: 'number' })
-  @ApiResponse({ status: 200, description: 'Usuario y sus datos relacionados eliminados.' })
+  @Roles('ADMIN', 'owner', 'USER')
+  @ApiOperation({
+    summary:
+      'Eliminar cuenta de usuario permanentemente (Admin o el propio usuario)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del usuario a eliminar',
+    type: 'number',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario y sus datos relacionados eliminados.',
+  })
   @ApiResponse({ status: 403, description: 'Prohibido. No tienes permisos.' })
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.userService.remove(id, user);

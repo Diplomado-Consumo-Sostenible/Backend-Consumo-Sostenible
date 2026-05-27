@@ -1,21 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Rol } from '../../shared/entities/rol.entity';
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
 import { RolRepository } from 'src/shared/repositories/rol.repository';
 
-
 @Injectable()
 export class RolService {
-  constructor(
-    private readonly rolRepository: RolRepository,
-  ) {}
+  constructor(private readonly rolRepository: RolRepository) {}
 
   // Crear rol
   async create(createRolDto: CreateRolDto) {
-    const exists = await this.rolRepository.findOne({ where: { nombre: createRolDto.nombre } });
+    const exists = await this.rolRepository.findOne({
+      where: { nombre: createRolDto.nombre },
+    });
     if (exists) return { message: `El rol "${createRolDto.nombre}" ya existe` };
     const rol = this.rolRepository.create(createRolDto);
     await this.rolRepository.save(rol);
@@ -26,7 +22,7 @@ export class RolService {
   async findAll() {
     const roles = await this.rolRepository.find({ relations: ['users'] });
     if (roles.length === 0) return { message: 'No se encontraron roles' };
-    
+
     return this.rolRepository.find({ relations: ['users'] });
   }
 

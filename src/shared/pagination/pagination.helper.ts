@@ -1,4 +1,3 @@
-
 export interface PaginationResult<T> {
   data: T[];
   meta: {
@@ -9,7 +8,6 @@ export interface PaginationResult<T> {
     currentPage: number;
   };
 }
-
 
 export function createPaginationResponse<T>(
   data: T[],

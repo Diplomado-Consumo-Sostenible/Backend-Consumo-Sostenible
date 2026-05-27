@@ -18,7 +18,12 @@ import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { GetProductsFilterDto } from '../dto/get-products-filter.dto';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('product')
 @Controller('product')
@@ -26,9 +31,14 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get('business/:businessId')
-  @ApiOperation({ summary: 'Listar todos los productos de un negocio (Público)' })
+  @ApiOperation({
+    summary: 'Listar todos los productos de un negocio (Público)',
+  })
   @ApiResponse({ status: 200, description: 'Lista de productos del negocio' })
-  @ApiResponse({ status: 404, description: 'Negocio no encontrado o sin productos' })
+  @ApiResponse({
+    status: 404,
+    description: 'Negocio no encontrado o sin productos',
+  })
   findAllByBusiness(
     @Param('businessId', ParseIntPipe) businessId: number,
     @Query() filterDto: GetProductsFilterDto,
@@ -44,7 +54,10 @@ export class ProductController {
   @Roles('owner', 'ADMIN')
   @ApiOperation({ summary: 'Agregar un producto a un negocio (Dueño o Admin)' })
   @ApiResponse({ status: 201, description: 'Producto creado exitosamente' })
-  @ApiResponse({ status: 403, description: 'Prohibido. No eres el dueño de este negocio.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Prohibido. No eres el dueño de este negocio.',
+  })
   @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
   create(
     @Param('businessId', ParseIntPipe) businessId: number,
@@ -59,8 +72,14 @@ export class ProductController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner', 'ADMIN')
   @ApiOperation({ summary: 'Actualizar un producto (Dueño o Admin)' })
-  @ApiResponse({ status: 200, description: 'Producto actualizado exitosamente' })
-  @ApiResponse({ status: 403, description: 'Prohibido. No eres el dueño de este producto.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Producto actualizado exitosamente',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Prohibido. No eres el dueño de este producto.',
+  })
   @ApiResponse({ status: 404, description: 'Producto no encontrado' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -76,12 +95,12 @@ export class ProductController {
   @Roles('owner', 'ADMIN')
   @ApiOperation({ summary: 'Eliminar un producto (Dueño o Admin)' })
   @ApiResponse({ status: 200, description: 'Producto eliminado exitosamente' })
-  @ApiResponse({ status: 403, description: 'Prohibido. No eres el dueño de este producto.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Prohibido. No eres el dueño de este producto.',
+  })
   @ApiResponse({ status: 404, description: 'Producto no encontrado' })
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: any,
-  ) {
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.productService.remove(id, user);
   }
 }

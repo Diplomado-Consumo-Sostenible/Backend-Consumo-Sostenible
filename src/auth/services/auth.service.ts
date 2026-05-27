@@ -13,6 +13,15 @@ import { PerfilRepository } from 'src/shared/repositories/perfil.repository';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { UserRepository } from 'src/shared/repositories/user.repository';
 import { randomBytes } from 'crypto';
+import { User } from 'src/shared/entities/user.entity';
+
+interface GoogleAuthUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture: string;
+  accessToken: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -21,7 +30,7 @@ export class AuthService {
     private readonly usuarioRepository: UserRepository,
     private readonly rolRepository: RolRepository,
     private readonly generoRepository: GeneroRepository,
-    private readonly  perfilRepository: PerfilRepository,
+    private readonly perfilRepository: PerfilRepository,
     private readonly mailService: MailService,
   ) {}
 
@@ -77,7 +86,10 @@ export class AuthService {
     };
   }
 
-  async validateUser(email: string, plainPassword: string): Promise<any> {
+  async validateUser(
+    email: string,
+    plainPassword: string,
+  ): Promise<User | null> {
     const user = await this.usuarioRepository.findOne({
       where: { email },
       relations: ['rol'],
@@ -90,12 +102,12 @@ export class AuthService {
         );
       }
       const { password, ...result } = user;
-      return result;
+      return result as User;
     }
     return null;
   }
 
-  async generateToken(user: any): Promise<{ access_token: string }> {
+  async generateToken(user: User): Promise<{ access_token: string }> {
     const payload = {
       sub: user.id_usuario,
       email: user.email,
@@ -173,47 +185,52 @@ export class AuthService {
     return { message: 'Contraseña restablecida correctamente' };
   }
 
+  async googleLogin(
+    reqUser: GoogleAuthUser | null,
+    rolId: number,
+    _id_genero?: number,
+  ) {
+    if (!reqUser) throw new BadRequestException('No user from google');
 
+    const { email, firstName, lastName } = reqUser;
 
-  async googleLogin(reqUser: any, rolId: number, id_genero?: number) {
-  if (!reqUser) throw new BadRequestException('No user from google');
-
-  const { email, firstName, lastName } = reqUser;
-
-  let user = await this.usuarioRepository.findOne({
-    where: { email },
-    relations: ['rol'],
-  });
-
-  if (!user) {
-    const selectedRol = await this.rolRepository.findOne({ where: { id: rolId } });
-    if (!selectedRol) throw new BadRequestException('El Rol especificado no es válido.');
-
-    const randomPassword = randomBytes(16).toString('hex');
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(randomPassword, salt);
-
-    const newUser = this.usuarioRepository.create({
-      email,
-      password: hashedPassword,
-      rol: selectedRol,
-      isActive: true,
+    let user = await this.usuarioRepository.findOne({
+      where: { email },
+      relations: ['rol'],
     });
-    user = await this.usuarioRepository.save(newUser);
 
-    const newProfile = this.perfilRepository.create({
-      nombre: `${firstName} ${lastName}`.trim(),
-    });
-    newProfile.user = user;
-    await this.perfilRepository.save(newProfile);
+    if (!user) {
+      const selectedRol = await this.rolRepository.findOne({
+        where: { id: rolId },
+      });
+      if (!selectedRol)
+        throw new BadRequestException('El Rol especificado no es válido.');
+
+      const randomPassword = randomBytes(16).toString('hex');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+      const newUser = this.usuarioRepository.create({
+        email,
+        password: hashedPassword,
+        rol: selectedRol,
+        isActive: true,
+      });
+      user = await this.usuarioRepository.save(newUser);
+
+      const newProfile = this.perfilRepository.create({
+        nombre: `${firstName} ${lastName}`.trim(),
+      });
+      newProfile.user = user;
+      await this.perfilRepository.save(newProfile);
+    }
+
+    if (user.rol && user.rol.id !== rolId) {
+      console.warn(
+        `El usuario ${email} ya tiene un rol asignado (${user.rol.nombre}). Ignorando el nuevo rol solicitado (ID: ${rolId}).`,
+      );
+    }
+
+    return this.generateToken(user);
   }
-
-  if (user.rol && user.rol.id !== rolId) {
-    console.warn(
-      `El usuario ${email} ya tiene un rol asignado (${user.rol.nombre}). Ignorando el nuevo rol solicitado (ID: ${rolId}).`,
-    );
-  }
-
-  return this.generateToken(user);
-}
 }

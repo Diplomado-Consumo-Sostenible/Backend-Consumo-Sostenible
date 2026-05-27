@@ -14,9 +14,7 @@ import { createPaginationResponse } from 'src/shared/pagination/pagination.helpe
 
 @Injectable()
 export class CategoryService {
-  constructor(
-    private readonly categoryRepository: CategoryRepository,
-  ) {}
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
   async create(createCategoryDto: CreateCategoryDto): Promise<any> {
     try {
@@ -52,7 +50,7 @@ export class CategoryService {
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException(
-        `Error al crear la categoría: ${error.message}`,
+        `Error al crear la categoría: ${(error as Error).message}`,
       );
     }
   }
@@ -69,7 +67,7 @@ export class CategoryService {
       return createPaginationResponse(categories, total, page, limit);
     } catch (error) {
       throw new InternalServerErrorException(
-        `Error al obtener las categorías: ${error.message}`,
+        `Error al obtener las categorías: ${(error as Error).message}`,
       );
     }
   }
@@ -91,7 +89,7 @@ export class CategoryService {
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
-        `Error al obtener las categorías: ${error.message}`,
+        `Error al obtener las categorías: ${(error as Error).message}`,
       );
     }
   }
@@ -122,7 +120,7 @@ export class CategoryService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al buscar la categoría: ${error.message}`,
+        `Error al buscar la categoría: ${(error as Error).message}`,
       );
     }
   }
@@ -177,7 +175,7 @@ export class CategoryService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al actualizar la categoría: ${error.message}`,
+        `Error al actualizar la categoría: ${(error as Error).message}`,
       );
     }
   }
@@ -199,7 +197,7 @@ export class CategoryService {
       )
         throw error;
       throw new InternalServerErrorException(
-        `Error al eliminar la categoría: ${error.message}`,
+        `Error al eliminar la categoría: ${(error as Error).message}`,
       );
     }
   }
