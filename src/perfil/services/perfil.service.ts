@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PerfilRepository } from 'src/shared/repositories/perfil.repository';
 import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { UpdatePerfilDto } from '../dto/update-perfil.dto';
@@ -17,45 +21,48 @@ export class PerfilService {
     private readonly generoRepository: GeneroRepository,
   ) {}
 
-
   async findMyProfile(userId: number) {
     const perfil = await this.perfilRepository.findOne({
-      where: { 
+      where: {
         user: { id_usuario: userId },
         isActive: true,
       },
       relations: ['genero', 'user'],
-      select: { 
-        id_perfil: true, 
-        nombre: true, 
-        foto_perfil: true, 
+      select: {
+        id_perfil: true,
+        nombre: true,
+        foto_perfil: true,
         createdAt: true,
         updatedAt: true,
-        genero: { id_genero: true, nombre: true }, 
-        user: { id_usuario: true, email: true } 
+        genero: { id_genero: true, nombre: true },
+        user: { id_usuario: true, email: true },
       },
     });
 
-    if (!perfil) throw new NotFoundException('Perfil no encontrado o tu cuenta está inactiva.');
+    if (!perfil)
+      throw new NotFoundException(
+        'Perfil no encontrado o tu cuenta está inactiva.',
+      );
     return perfil;
   }
-
 
   async updateMyProfile(userId: number, dto: UpdatePerfilDto) {
     const perfil = await this.findMyProfile(userId);
 
     if (dto.nombre) perfil.nombre = dto.nombre;
-    
+
     if (dto.id_genero) {
-      const genero = await this.generoRepository.findOne({ where: { id_genero: dto.id_genero } });
-      if (!genero) throw new BadRequestException('El género especificado no existe.');
+      const genero = await this.generoRepository.findOne({
+        where: { id_genero: dto.id_genero },
+      });
+      if (!genero)
+        throw new BadRequestException('El género especificado no existe.');
       perfil.genero = genero;
     }
 
     await this.perfilRepository.save(perfil);
     return { message: 'Perfil actualizado exitosamente', perfil };
   }
-
 
   async updateMyPhoto(userId: number, dto: UpdateFotoDto) {
     const perfil = await this.findMyProfile(userId);
@@ -74,7 +81,6 @@ export class PerfilService {
     return { message: 'Foto de perfil actualizada exitosamente', perfil };
   }
 
-
   async findAll(filters: GetPerfilesFilterDto) {
     const { page = 1, limit = 10, isActive, id_genero } = filters;
     const skip = (page - 1) * limit;
@@ -84,7 +90,7 @@ export class PerfilService {
     if (isActive !== undefined) {
       whereCondition.isActive = isActive === 'true';
     }
-    
+
     if (id_genero !== undefined) {
       whereCondition.genero = { id_genero: id_genero };
     }
@@ -98,8 +104,8 @@ export class PerfilService {
 
     if (total === 0) {
       const hasFilters = isActive !== undefined || id_genero !== undefined;
-      const msg = hasFilters 
-        ? 'No se encontraron perfiles con los filtros especificados.' 
+      const msg = hasFilters
+        ? 'No se encontraron perfiles con los filtros especificados.'
         : 'Aún no hay perfiles registrados.';
       throw new NotFoundException(msg);
     }
@@ -112,19 +118,22 @@ export class PerfilService {
       where: { id_perfil: id },
       relations: ['genero', 'user'],
     });
-    
+
     if (!perfil) throw new NotFoundException('Perfil no encontrado');
     return perfil;
   }
 
   async updateAsAdmin(id: number, dto: UpdatePerfilDto) {
-    const perfil = await this.findOne(id); 
+    const perfil = await this.findOne(id);
 
     if (dto.nombre) perfil.nombre = dto.nombre;
-    
+
     if (dto.id_genero) {
-      const genero = await this.generoRepository.findOne({ where: { id_genero: dto.id_genero } });
-      if (!genero) throw new BadRequestException('El género especificado no existe.');
+      const genero = await this.generoRepository.findOne({
+        where: { id_genero: dto.id_genero },
+      });
+      if (!genero)
+        throw new BadRequestException('El género especificado no existe.');
       perfil.genero = genero;
     }
 
@@ -133,19 +142,21 @@ export class PerfilService {
   }
 
   async deletePhotoAsAdmin(id: number) {
-    const perfil = await this.findOne(id); 
+    const perfil = await this.findOne(id);
 
     if (!perfil.foto_perfil) {
-      throw new BadRequestException('Este perfil no tiene una foto asignada actualmente.');
+      throw new BadRequestException(
+        'Este perfil no tiene una foto asignada actualmente.',
+      );
     }
 
     perfil.foto_perfil = '';
-    
+
     await this.perfilRepository.save(perfil);
-    
-    return { 
-      message: 'La foto de perfil ha sido eliminada por moderación (Admin).', 
-      perfil 
+
+    return {
+      message: 'La foto de perfil ha sido eliminada por moderación (Admin).',
+      perfil,
     };
   }
 }

@@ -7,7 +7,8 @@ export class GetCertificationsFilterDto extends PaginationDto {
   @IsOptional()
   @IsEnum(CertificationStatus)
   @ApiPropertyOptional({
-    description: 'Filtrar por estado de la certificación (Active, Pending, Rejected)',
+    description:
+      'Filtrar por estado de la certificación (Active, Pending, Rejected)',
     enum: CertificationStatus,
     example: CertificationStatus.PENDING,
   })

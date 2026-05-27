@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron } from '@nestjs/schedule';
 import { MailService } from 'src/mail/mail.service';
@@ -61,9 +57,10 @@ export class ReviewsSummaryService {
       }
     }
 
-    this.logger.log(`✅ Reportes semanales enviados: ${sent}/${businesses.length} negocios`);
+    this.logger.log(
+      `✅ Reportes semanales enviados: ${sent}/${businesses.length} negocios`,
+    );
   }
-
 
   async generateWeeklySummary(businessId: number): Promise<WeeklySummaryDto> {
     const summary = await this.buildWeeklySummary(businessId);
@@ -75,14 +72,16 @@ export class ReviewsSummaryService {
     return summary;
   }
 
-  private async buildWeeklySummary(businessId: number): Promise<WeeklySummaryDto> {
+  private async buildWeeklySummary(
+    businessId: number,
+  ): Promise<WeeklySummaryDto> {
     const business = await this.businessRepository.findOne({
       where: { id_business: businessId },
       relations: ['user'],
     });
     if (!business) throw new NotFoundException('Negocio no encontrado.');
 
-    const weekEnd   = new Date();
+    const weekEnd = new Date();
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
 
@@ -96,14 +95,24 @@ export class ReviewsSummaryService {
       order: { created_at: 'DESC' },
     });
 
-    const total    = thisWeekReviews.length;
-    const positive = thisWeekReviews.filter(r => r.sentiment === ReviewSentiment.POSITIVE).length;
-    const neutral  = thisWeekReviews.filter(r => r.sentiment === ReviewSentiment.NEUTRAL).length;
-    const negative = thisWeekReviews.filter(r => r.sentiment === ReviewSentiment.NEGATIVE).length;
-    const averageRating = total > 0
-      ? Number((thisWeekReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(2))
-      : 0;
-
+    const total = thisWeekReviews.length;
+    const positive = thisWeekReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.POSITIVE,
+    ).length;
+    const neutral = thisWeekReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.NEUTRAL,
+    ).length;
+    const negative = thisWeekReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.NEGATIVE,
+    ).length;
+    const averageRating =
+      total > 0
+        ? Number(
+            (thisWeekReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(
+              2,
+            ),
+          )
+        : 0;
 
     const prevWeekStart = new Date(weekStart);
     prevWeekStart.setDate(prevWeekStart.getDate() - 7);
@@ -117,18 +126,26 @@ export class ReviewsSummaryService {
     });
 
     const prevTotal = prevWeekReviews.length;
-    const prevNegPct = prevTotal > 0
-      ? prevWeekReviews.filter(r => r.sentiment === ReviewSentiment.NEGATIVE).length / prevTotal
-      : 0;
+    const prevNegPct =
+      prevTotal > 0
+        ? prevWeekReviews.filter(
+            (r) => r.sentiment === ReviewSentiment.NEGATIVE,
+          ).length / prevTotal
+        : 0;
     const currNegPct = total > 0 ? negative / total : 0;
 
     let trend: SummaryTrend;
-    if (currNegPct < prevNegPct - 0.1)      trend = 'improving';
+    if (currNegPct < prevNegPct - 0.1) trend = 'improving';
     else if (currNegPct > prevNegPct + 0.1) trend = 'declining';
-    else                                     trend = 'stable';
+    else trend = 'stable';
 
     const stats: WeeklySummaryStatsDto = {
-      total, positive, neutral, negative, averageRating, trend,
+      total,
+      positive,
+      neutral,
+      negative,
+      averageRating,
+      trend,
     };
 
     // Sin reseñas → sin llamada a Claude
@@ -144,7 +161,7 @@ export class ReviewsSummaryService {
       };
     }
 
-    const topComments: ReviewSampleDto[] = thisWeekReviews.map(r => ({
+    const topComments: ReviewSampleDto[] = thisWeekReviews.map((r) => ({
       comment: r.comment,
       sentiment: r.sentiment,
       rating: r.rating,
@@ -167,12 +184,17 @@ export class ReviewsSummaryService {
     };
   }
 
-
   async generateGeneralSummary(businessId: number): Promise<{
     generalReview: string;
     aiSummary: string;
     updatedAt: Date;
-    stats: { total: number; positive: number; negative: number; neutral: number; averageRating: number };
+    stats: {
+      total: number;
+      positive: number;
+      negative: number;
+      neutral: number;
+      averageRating: number;
+    };
   }> {
     const business = await this.businessRepository.findOne({
       where: { id_business: businessId },
@@ -188,13 +210,22 @@ export class ReviewsSummaryService {
       take: 100,
     });
 
-    const total    = allReviews.length;
-    const positive = allReviews.filter(r => r.sentiment === ReviewSentiment.POSITIVE).length;
-    const negative = allReviews.filter(r => r.sentiment === ReviewSentiment.NEGATIVE).length;
-    const neutral  = allReviews.filter(r => r.sentiment === ReviewSentiment.NEUTRAL).length;
-    const averageRating = total > 0
-      ? Number((allReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(2))
-      : 0;
+    const total = allReviews.length;
+    const positive = allReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.POSITIVE,
+    ).length;
+    const negative = allReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.NEGATIVE,
+    ).length;
+    const neutral = allReviews.filter(
+      (r) => r.sentiment === ReviewSentiment.NEUTRAL,
+    ).length;
+    const averageRating =
+      total > 0
+        ? Number(
+            (allReviews.reduce((s, r) => s + r.rating, 0) / total).toFixed(2),
+          )
+        : 0;
 
     const stats = { total, positive, negative, neutral, averageRating };
 
@@ -207,29 +238,33 @@ export class ReviewsSummaryService {
       };
     }
 
-    const reviewsData: ReviewSampleDto[] = allReviews.map(r => ({
+    const reviewsData: ReviewSampleDto[] = allReviews.map((r) => ({
       comment: r.comment,
       sentiment: r.sentiment,
       rating: r.rating,
     }));
 
-
     const [generalReview, aiSummary] = await Promise.all([
       this.aiService.generateGeneralReview(business.businessName, reviewsData),
       this.aiService.generateWeeklySummary(
         business.businessName,
-        { total, positive, neutral, negative, averageRating, trend: positive > negative ? 'improving' : 'stable' },
+        {
+          total,
+          positive,
+          neutral,
+          negative,
+          averageRating,
+          trend: positive > negative ? 'improving' : 'stable',
+        },
         reviewsData,
       ),
     ]);
-
 
     const updatedAt = new Date();
     await this.businessRepository.update(businessId, {
       ai_reviews_summary: generalReview,
       ai_summary_updated_at: updatedAt,
     });
-
 
     this.eventEmitter.emit('sentiment.general.summary', {
       businessId,
@@ -243,11 +278,17 @@ export class ReviewsSummaryService {
     return { generalReview, aiSummary, updatedAt, stats };
   }
 
-
   async getSavedGeneralSummary(businessId: number) {
     const business = await this.businessRepository.findOne({
       where: { id_business: businessId },
-      select: ['id_business', 'businessName', 'ai_reviews_summary', 'ai_summary_updated_at', 'total_reviews', 'average_rating'],
+      select: [
+        'id_business',
+        'businessName',
+        'ai_reviews_summary',
+        'ai_summary_updated_at',
+        'total_reviews',
+        'average_rating',
+      ],
     });
     if (!business) throw new NotFoundException('Negocio no encontrado.');
 

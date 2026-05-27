@@ -27,7 +27,9 @@ export class CreateNotificationTable1779200000000 implements MigrationInterface 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_notification_owner_isRead"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_notification_owner_isRead"`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "notification"`);
   }
 }

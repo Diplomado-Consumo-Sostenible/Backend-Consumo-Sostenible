@@ -20,7 +20,7 @@ export class Product {
   @Column({ type: 'text' })
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 , default: 0 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   price: number;
 
   @Column({ nullable: true })
@@ -35,7 +35,9 @@ export class Product {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Business, (business) => business.products, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Business, (business) => business.products, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'id_business' })
   business: Business;
 }

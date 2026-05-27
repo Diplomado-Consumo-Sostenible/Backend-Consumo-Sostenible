@@ -24,7 +24,9 @@ export class NotificationsController {
 
   @Get('my')
   @Roles('owner', 'ADMIN', 'USER')
-  @ApiOperation({ summary: 'Historial de notificaciones del usuario autenticado' })
+  @ApiOperation({
+    summary: 'Historial de notificaciones del usuario autenticado',
+  })
   getMyNotifications(
     @CurrentUser() user: any,
     @Query('page') page = '1',
@@ -54,7 +56,10 @@ export class NotificationsController {
   @Delete(':id')
   @Roles('owner', 'ADMIN', 'USER')
   @ApiOperation({ summary: 'Eliminar una notificación' })
-  deleteNotification(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+  deleteNotification(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
     return this.notificationsService.deleteNotification(id, user);
   }
 }

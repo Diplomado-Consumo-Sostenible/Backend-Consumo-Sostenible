@@ -1,26 +1,32 @@
-name: CI-Backend Ecovida
+name: CI
 
 on:
   push:
     branches: [main]
 
-
 jobs:
-  build-and-test:
+  check:
+    name: Lint, test y build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: 24
+          cache: npm
 
-      - name: install dependencies
+      - name: Instalar dependencias
         run: npm ci
 
-      - name: build code
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
         run: npm run build

@@ -1,14 +1,28 @@
-import { Controller, Get, Patch, Body, Param, UseGuards, ParseIntPipe, Query, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  ParseIntPipe,
+  Query,
+  Delete,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { PerfilService } from '../services/perfil.service';
 import { UpdatePerfilDto } from '../dto/update-perfil.dto';
 import { GetPerfilesFilterDto } from '../dto/get-perfiles-filter.dto';
 import { UpdateFotoDto } from '../dto/update-foto.dto';
-
 
 @ApiTags('perfil')
 @ApiBearerAuth()
@@ -16,7 +30,6 @@ import { UpdateFotoDto } from '../dto/update-foto.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PerfilController {
   constructor(private readonly perfilService: PerfilService) {}
-
 
   @Get('me')
   @Roles('ADMIN', 'owner', 'USER')
@@ -38,7 +51,10 @@ export class PerfilController {
 
   @Patch('me/foto')
   @Roles('ADMIN', 'owner', 'USER')
-  @ApiResponse({ status: 200, description: 'Foto de perfil actualizada correctamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Foto de perfil actualizada correctamente',
+  })
   @ApiResponse({ status: 404, description: 'Perfil no encontrado' })
   @ApiResponse({ status: 400, description: 'URL de foto no válida' })
   @ApiOperation({ summary: 'Actualizar únicamente la foto de perfil' })
@@ -65,7 +81,7 @@ export class PerfilController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN') 
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Actualizar cualquier perfil (Solo Admin)' })
   @ApiResponse({ status: 200, description: 'Perfil actualizado correctamente' })
   @ApiResponse({ status: 404, description: 'Perfil no encontrado' })
@@ -77,13 +93,14 @@ export class PerfilController {
   }
 
   @Delete(':id/foto')
-  @Roles('ADMIN') 
-  @ApiOperation({ summary: 'Eliminar la foto de un perfil por contenido inapropiado (Solo Admin)' })
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary:
+      'Eliminar la foto de un perfil por contenido inapropiado (Solo Admin)',
+  })
   @ApiResponse({ status: 200, description: 'Foto eliminada correctamente' })
   @ApiResponse({ status: 404, description: 'Perfil no encontrado' })
-  deletePhotoAsAdmin(
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  deletePhotoAsAdmin(@Param('id', ParseIntPipe) id: number) {
     return this.perfilService.deletePhotoAsAdmin(id);
   }
 }

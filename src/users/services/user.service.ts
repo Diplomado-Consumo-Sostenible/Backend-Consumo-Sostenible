@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import bcrypt from 'bcryptjs';
 import { UpdateUsuarioDto } from '../dto/Update-usuario.dto';
@@ -45,11 +51,11 @@ export class UserService {
 
   async findAll(filterDto: GetUsersFilterDto = {}) {
     const {
-      page    = 1,
-      limit   = 15,
+      page = 1,
+      limit = 15,
       rol,
-      sortBy  = UserSortBy.CREATED_AT,
-      order   = 'DESC',
+      sortBy = UserSortBy.CREATED_AT,
+      order = 'DESC',
     } = filterDto;
 
     const skip = (page - 1) * limit;
@@ -73,7 +79,8 @@ export class UserService {
       qb.where('rol.nombre = :rol', { rol });
     }
 
-    const sortField = sortBy === UserSortBy.EMAIL ? 'user.email' : 'user.createdAt';
+    const sortField =
+      sortBy === UserSortBy.EMAIL ? 'user.email' : 'user.createdAt';
     qb.orderBy(sortField, order);
     qb.skip(skip).take(limit);
 
@@ -81,8 +88,10 @@ export class UserService {
 
     const [[data, total], totalActive, totalInactive] = await Promise.all([
       qb.getManyAndCount(),
-      this.usuarioRepository.count({ where: { isActive: true,  ...roleWhere } }),
-      this.usuarioRepository.count({ where: { isActive: false, ...roleWhere } }),
+      this.usuarioRepository.count({ where: { isActive: true, ...roleWhere } }),
+      this.usuarioRepository.count({
+        where: { isActive: false, ...roleWhere },
+      }),
     ]);
 
     const base = createPaginationResponse(data, total, page, limit);
@@ -135,7 +144,9 @@ export class UserService {
       relations: ['business'],
     });
 
-    const affectedBusinessIds = [...new Set(userReviews.map(r => r.business.id_business))];
+    const affectedBusinessIds = [
+      ...new Set(userReviews.map((r) => r.business.id_business)),
+    ];
 
     for (const businessId of affectedBusinessIds) {
       await this.recalculateBusinessRating(businessId);
@@ -148,14 +159,24 @@ export class UserService {
   }
 
   async create(userData: CreateUsuarioDto) {
-    const existingUser = await this.usuarioRepository.findOne({ where: { email: userData.email } });
-    if (existingUser) throw new BadRequestException('Ya existe un usuario con este correo electrónico.');
+    const existingUser = await this.usuarioRepository.findOne({
+      where: { email: userData.email },
+    });
+    if (existingUser)
+      throw new BadRequestException(
+        'Ya existe un usuario con este correo electrónico.',
+      );
 
-    const rol = await this.rolRepository.findOne({ where: { id: userData.rolId } });
+    const rol = await this.rolRepository.findOne({
+      where: { id: userData.rolId },
+    });
     if (!rol) throw new BadRequestException('El Rol especificado no existe.');
 
-    const genero = await this.generoRepository.findOne({ where: { id_genero: userData.id_genero } });
-    if (!genero) throw new BadRequestException('El género especificado no existe.');
+    const genero = await this.generoRepository.findOne({
+      where: { id_genero: userData.id_genero },
+    });
+    if (!genero)
+      throw new BadRequestException('El género especificado no existe.');
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(userData.password, salt);
@@ -182,16 +203,19 @@ export class UserService {
     };
   }
 
-  
   async update(id: number, updateData: UpdateUsuarioDto, currentUser: any) {
     const roleName = currentUser.rol.nombre;
 
     if (roleName !== 'ADMIN' && currentUser.id_usuario !== id) {
-      throw new ForbiddenException('No tienes permiso para editar este perfil.');
+      throw new ForbiddenException(
+        'No tienes permiso para editar este perfil.',
+      );
     }
 
     if (updateData.rolId && roleName !== 'ADMIN') {
-      throw new ForbiddenException('No tienes permiso para cambiar el rol de la cuenta.');
+      throw new ForbiddenException(
+        'No tienes permiso para cambiar el rol de la cuenta.',
+      );
     }
 
     const user = await this.usuarioRepository.findOne({
@@ -207,7 +231,9 @@ export class UserService {
       user.password = await bcrypt.hash(updateData.password, salt);
     }
     if (updateData.rolId) {
-      const rol = await this.rolRepository.findOne({ where: { id: updateData.rolId } });
+      const rol = await this.rolRepository.findOne({
+        where: { id: updateData.rolId },
+      });
       if (!rol) throw new BadRequestException('El Rol especificado no existe.');
       user.rol = rol;
     }
@@ -217,8 +243,11 @@ export class UserService {
     if (updateData.nombre || updateData.id_genero) {
       if (updateData.nombre) user.perfil.nombre = updateData.nombre;
       if (updateData.id_genero) {
-        const genero = await this.generoRepository.findOne({ where: { id_genero: updateData.id_genero } });
-        if (!genero) throw new BadRequestException('El género especificado no existe.');
+        const genero = await this.generoRepository.findOne({
+          where: { id_genero: updateData.id_genero },
+        });
+        if (!genero)
+          throw new BadRequestException('El género especificado no existe.');
         user.perfil.genero = genero;
       }
       await this.perfilRepository.save(user.perfil);
@@ -227,17 +256,18 @@ export class UserService {
     return { message: 'Perfil actualizado exitosamente.' };
   }
 
-
   async remove(id: number, currentUser: any) {
     const roleName = currentUser.rol.nombre;
 
     if (roleName !== 'ADMIN' && currentUser.id_usuario !== id) {
-      throw new ForbiddenException('No tienes permiso para eliminar esta cuenta.');
+      throw new ForbiddenException(
+        'No tienes permiso para eliminar esta cuenta.',
+      );
     }
 
     const userToDelete = await this.usuarioRepository.findOne({
       where: { id_usuario: id },
-      relations: ['perfil', 'business'], 
+      relations: ['perfil', 'business'],
     });
 
     if (!userToDelete) throw new NotFoundException('Usuario no encontrado.');
@@ -246,7 +276,9 @@ export class UserService {
       where: { user: { id_usuario: id } },
       relations: ['business'],
     });
-    const affectedBusinessIds = [...new Set(userReviews.map(r => r.business.id_business))];
+    const affectedBusinessIds = [
+      ...new Set(userReviews.map((r) => r.business.id_business)),
+    ];
 
     if (userToDelete.business) {
       if (Array.isArray(userToDelete.business)) {
@@ -268,33 +300,45 @@ export class UserService {
       await this.recalculateBusinessRating(businessId);
     }
 
-    return { message: `El usuario con ID ${id} y todos sus negocios han sido eliminados permanentemente.` };
+    return {
+      message: `El usuario con ID ${id} y todos sus negocios han sido eliminados permanentemente.`,
+    };
   }
 
   async changePassword(userId: number, dto: ChangePasswordDto) {
-    const user = await this.usuarioRepository.findOne({ where: { id_usuario: userId } });
-    
+    const user = await this.usuarioRepository.findOne({
+      where: { id_usuario: userId },
+    });
+
     if (!user) throw new NotFoundException('Usuario no encontrado.');
 
     const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!isMatch) throw new UnauthorizedException('La contraseña actual es incorrecta.');
+    if (!isMatch)
+      throw new UnauthorizedException('La contraseña actual es incorrecta.');
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(dto.newPassword, salt);
-    
+
     await this.usuarioRepository.save(user);
     return { message: 'Contraseña actualizada exitosamente.' };
   }
 
   async changeEmail(userId: number, dto: ChangeEmailDto) {
-    const user = await this.usuarioRepository.findOne({ where: { id_usuario: userId } });
-    
+    const user = await this.usuarioRepository.findOne({
+      where: { id_usuario: userId },
+    });
+
     if (!user) throw new NotFoundException('Usuario no encontrado.');
 
     const isMatch = await bcrypt.compare(dto.password, user.password);
-    if (!isMatch) throw new UnauthorizedException('Contraseña incorrecta. No se puede cambiar el correo.');
+    if (!isMatch)
+      throw new UnauthorizedException(
+        'Contraseña incorrecta. No se puede cambiar el correo.',
+      );
 
-    const existingEmail = await this.usuarioRepository.findOne({ where: { email: dto.newEmail } });
+    const existingEmail = await this.usuarioRepository.findOne({
+      where: { email: dto.newEmail },
+    });
     if (existingEmail && existingEmail.id_usuario !== userId) {
       throw new BadRequestException('Este correo electrónico ya está en uso.');
     }

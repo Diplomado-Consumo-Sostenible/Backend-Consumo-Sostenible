@@ -16,7 +16,13 @@ import { CertificationStatus } from 'src/shared/entities/certifications.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { CertificationsService } from '../services/certifications.service';
 import { GetCertificationsFilterDto } from '../dto/get-certifications-filter.dto';
@@ -28,16 +34,26 @@ export class CertificationsController {
   constructor(private readonly certificationsService: CertificationsService) {}
 
   @Get('business/:businessId')
-  @ApiOperation({ summary: 'Obtener certificaciones activas de un negocio (Público)' })
-  @ApiResponse({ status: 200, description: 'Lista paginada de certificaciones activas' })
-  @ApiResponse({ status: 404, description: 'El negocio no tiene certificaciones activas' })
+  @ApiOperation({
+    summary: 'Obtener certificaciones activas de un negocio (Público)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de certificaciones activas',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'El negocio no tiene certificaciones activas',
+  })
   findActiveByBusiness(
     @Param('businessId', ParseIntPipe) businessId: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.certificationsService.findActiveByBusiness(businessId, paginationDto);
+    return this.certificationsService.findActiveByBusiness(
+      businessId,
+      paginationDto,
+    );
   }
-
 
   @Post()
   @ApiBearerAuth()
@@ -56,7 +72,9 @@ export class CertificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner')
-  @ApiOperation({ summary: 'Ver mis certificaciones enviadas con paginación (Solo Owner)' })
+  @ApiOperation({
+    summary: 'Ver mis certificaciones enviadas con paginación (Solo Owner)',
+  })
   findMyCertifications(
     @CurrentUser() user: any,
     @Query() paginationDto: PaginationDto,
@@ -68,10 +86,21 @@ export class CertificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner')
-  @ApiOperation({ summary: 'Editar y reenviar una certificación rechazada (Solo Owner)' })
-  @ApiResponse({ status: 200, description: 'Certificación actualizada y enviada a revisión.' })
-  @ApiResponse({ status: 400, description: 'Solo se pueden editar certificaciones rechazadas.' })
-  @ApiResponse({ status: 403, description: 'No tienes permiso para editar esta certificación.' })
+  @ApiOperation({
+    summary: 'Editar y reenviar una certificación rechazada (Solo Owner)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Certificación actualizada y enviada a revisión.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Solo se pueden editar certificaciones rechazadas.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'No tienes permiso para editar esta certificación.',
+  })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateCertificationDto,
@@ -93,9 +122,17 @@ export class CertificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Listar certificaciones con filtros y paginación (Solo Admin)' })
-  @ApiResponse({ status: 200, description: 'Lista paginada de certificaciones' })
-  @ApiResponse({ status: 403, description: 'Prohibido. Requiere rol de admin.' })
+  @ApiOperation({
+    summary: 'Listar certificaciones con filtros y paginación (Solo Admin)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de certificaciones',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Prohibido. Requiere rol de admin.',
+  })
   findAllForAdmin(@Query() filters: GetCertificationsFilterDto) {
     return this.certificationsService.findAllForAdmin(filters);
   }
@@ -105,13 +142,17 @@ export class CertificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Aprobar o rechazar certificación (Solo Admin)' })
-  @ApiBody({ 
-    schema: { 
-      type: 'object', 
-      properties: { 
-        status: { type: 'string', enum: ['Active', 'Pending', 'Rejected'], example: 'Active' }
-      } 
-    } 
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['Active', 'Pending', 'Rejected'],
+          example: 'Active',
+        },
+      },
+    },
   })
   changeStatus(
     @Param('id', ParseIntPipe) id: number,

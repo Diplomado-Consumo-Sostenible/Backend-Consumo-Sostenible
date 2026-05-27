@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  Unique,
+} from 'typeorm';
 import { User } from './user.entity';
 import { Business } from './business.entity';
 
@@ -15,7 +22,9 @@ export class ReviewBlock {
   @JoinColumn({ name: 'id_usuario' })
   user: User;
 
-  @ManyToOne(() => Business, (business) => business.reviewBlocks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Business, (business) => business.reviewBlocks, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'id_business' })
   business: Business;
 }

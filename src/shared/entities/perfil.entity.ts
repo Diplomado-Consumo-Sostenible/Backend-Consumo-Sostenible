@@ -31,7 +31,6 @@ export class Perfil {
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
-
   @OneToOne(() => User, (user) => user.perfil, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_usuario' })
   user: User;

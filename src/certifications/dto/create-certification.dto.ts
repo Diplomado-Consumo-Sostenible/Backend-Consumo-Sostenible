@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateCertificationDto {
   @ApiProperty({
     description: 'Nombre de la certificación',
-    example: 'Sello Orgánico 100%'
+    example: 'Sello Orgánico 100%',
   })
   @IsString()
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class CreateCertificationDto {
 
   @ApiProperty({
     description: 'Entidad emisora de la certificación',
-    example: 'Ministerio de Agricultura'
+    example: 'Ministerio de Agricultura',
   })
   @IsString()
   @IsNotEmpty()
@@ -20,7 +20,7 @@ export class CreateCertificationDto {
 
   @ApiPropertyOptional({
     description: 'URL de verificación de la certificación (opcional)',
-    example: 'https://verificacion.gob/12345'
+    example: 'https://verificacion.gob/12345',
   })
   @IsOptional()
   @IsUrl()
@@ -28,7 +28,7 @@ export class CreateCertificationDto {
 
   @ApiProperty({
     description: 'URL del badge de la certificación',
-    example: 'https://res.cloudinary.com/.../sello.png'
+    example: 'https://res.cloudinary.com/.../sello.png',
   })
   @IsUrl()
   @IsNotEmpty()

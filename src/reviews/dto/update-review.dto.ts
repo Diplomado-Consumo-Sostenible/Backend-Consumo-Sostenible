@@ -1,4 +1,11 @@
-import { IsInt, IsNotEmpty, IsString, Max, Min, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Max,
+  Min,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateReviewDto {
@@ -9,10 +16,12 @@ export class UpdateReviewDto {
   @IsNotEmpty()
   rating?: number;
 
-  @ApiProperty({ description: 'Comentario de la reseña', example: 'Excelente servicio y productos.' })
+  @ApiProperty({
+    description: 'Comentario de la reseña',
+    example: 'Excelente servicio y productos.',
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
   comment?: string;
-
 }

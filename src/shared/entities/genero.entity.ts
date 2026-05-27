@@ -1,7 +1,6 @@
 import { Perfil } from './perfil.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
-
 @Entity('genero')
 export class Genero {
   @PrimaryGeneratedColumn()
@@ -12,4 +11,4 @@ export class Genero {
 
   @OneToMany(() => Perfil, (perfil) => perfil.genero, { onDelete: 'CASCADE' })
   perfiles: Perfil[];
-} 
+}

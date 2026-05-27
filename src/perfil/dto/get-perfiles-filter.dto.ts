@@ -4,18 +4,18 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
 
 export class GetPerfilesFilterDto extends PaginationDto {
-  @ApiPropertyOptional({ 
-    description: 'Filtrar por perfiles activos/inactivos', 
+  @ApiPropertyOptional({
+    description: 'Filtrar por perfiles activos/inactivos',
     example: 'true',
-    enum: ['true', 'false'] 
+    enum: ['true', 'false'],
   })
   @IsOptional()
   @IsBooleanString()
   isActive?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'Filtrar por ID de género', 
-    example: 1 
+  @ApiPropertyOptional({
+    description: 'Filtrar por ID de género',
+    example: 1,
   })
   @IsOptional()
   @Type(() => Number)

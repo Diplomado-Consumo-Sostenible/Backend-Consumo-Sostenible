@@ -1,4 +1,3 @@
-
 import {
   BadRequestException,
   ConflictException,
@@ -12,18 +11,25 @@ import { MailService } from 'src/mail/mail.service';
 import { User } from 'src/shared/entities/user.entity';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { CategoryRepository } from 'src/shared/repositories/category.repository';
+import { MunicipioRepository } from 'src/shared/repositories/municipio.repository';
 import { RolRepository } from 'src/shared/repositories/rol.repository';
 import { TagsRepository } from 'src/shared/repositories/tags.repository';
 import { UserRepository } from 'src/shared/repositories/user.repository';
 import { FindOptionsWhere, ILike, In, MoreThanOrEqual, Not } from 'typeorm';
-import { Business, BusinessStatus } from '../../shared/entities/business.entity';
+import {
+  Business,
+  BusinessStatus,
+} from '../../shared/entities/business.entity';
+import { Municipio } from '../../shared/entities/municipio.entity';
 import { Tag } from '../../shared/entities/tags.entity';
 import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
 import { CreateBusinessDto } from '../dto/create-business.dto';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
-import { BusinessSortOption, PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
+import {
+  BusinessSortOption,
+  PublicBusinessFilterDto,
+} from '../dto/public-business-filter.dto';
 import { UpdateBusinessDto } from '../dto/update-business.dto';
-
 
 @Injectable()
 export class BusinessService {
@@ -35,6 +41,7 @@ export class BusinessService {
     private readonly userRepository: UserRepository,
     private readonly roleRepository: RolRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly municipioRepository: MunicipioRepository,
   ) {}
 
   private sanitizePublicBusiness(business: Business) {
@@ -44,19 +51,41 @@ export class BusinessService {
 
   //Metodos publicos
   async findAllPublic(filterDto: PublicBusinessFilterDto) {
-    const { page = 1, limit = 50, id_category, id_tag, search, sortBy, sortDirection = 'DESC' } = filterDto;
+    const {
+      page = 1,
+      limit = 50,
+      id_category,
+      id_tag,
+      id_departamento,
+      id_municipio,
+      search,
+      sortBy,
+      sortDirection = 'DESC',
+    } = filterDto;
     const skip = (page - 1) * limit;
 
     if (!sortBy || sortBy === BusinessSortOption.RELEVANT) {
-      const [businesses, total] = await this.businessRepository
-        .findPublicWithRelevanceScore({ skip, take: limit, id_category, id_tag, search });
+      const [businesses, total] =
+        await this.businessRepository.findPublicWithRelevanceScore({
+          skip,
+          take: limit,
+          id_category,
+          id_tag,
+          id_departamento,
+          id_municipio,
+          search,
+        });
 
       if (total === 0)
-        throw new NotFoundException('No hay negocios disponibles en este momento.');
+        throw new NotFoundException(
+          'No hay negocios disponibles en este momento.',
+        );
 
       return createPaginationResponse(
-        businesses.map(b => this.sanitizePublicBusiness(b)),
-        total, page, limit,
+        businesses.map((b) => this.sanitizePublicBusiness(b)),
+        total,
+        page,
+        limit,
       );
     }
 
@@ -65,7 +94,7 @@ export class BusinessService {
       isActive: true,
     };
     if (search) {
-      whereConditions.businessName = ILike(`%${search}%`); 
+      whereConditions.businessName = ILike(`%${search}%`);
     }
 
     if (id_category) {
@@ -76,29 +105,44 @@ export class BusinessService {
       whereConditions.tags = { id_tags: id_tag };
     }
 
+    if (id_municipio) {
+      whereConditions.municipio = { id_municipio };
+    } else if (id_departamento) {
+      whereConditions.municipio = { departamento: { id_departamento } };
+    }
 
     let orderClause: any = { createdAt: sortDirection };
 
     if (sortBy === BusinessSortOption.RATED) {
-      orderClause = { average_rating: sortDirection, total_reviews: sortDirection };
+      orderClause = {
+        average_rating: sortDirection,
+        total_reviews: sortDirection,
+      };
     } else if (sortBy === BusinessSortOption.REVIEWS) {
-      orderClause = { total_reviews: sortDirection, average_rating: sortDirection };
+      orderClause = {
+        total_reviews: sortDirection,
+        average_rating: sortDirection,
+      };
     } else if (sortBy === BusinessSortOption.RECENT) {
       orderClause = { createdAt: sortDirection };
     }
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: whereConditions,
-      relations: ['category', 'tags', 'certifications'],
+      relations: ['category', 'tags', 'certifications', 'municipio', 'municipio.departamento'],
       order: orderClause,
       skip: skip,
       take: limit,
     });
 
     if (total === 0) {
-      throw new NotFoundException('No hay negocios disponibles en este momento.');
+      throw new NotFoundException(
+        'No hay negocios disponibles en este momento.',
+      );
     }
 
-    const sanitizedBusinesses = businesses.map(b => this.sanitizePublicBusiness(b));
+    const sanitizedBusinesses = businesses.map((b) =>
+      this.sanitizePublicBusiness(b),
+    );
     return createPaginationResponse(sanitizedBusinesses, total, page, limit);
   }
 
@@ -109,7 +153,7 @@ export class BusinessService {
         status: BusinessStatus.ACTIVE,
         isActive: true,
       },
-      relations: ['category', 'tags', 'certifications', 'user'],
+      relations: ['category', 'tags', 'certifications', 'user', 'municipio', 'municipio.departamento'],
     });
 
     if (!business) {
@@ -129,23 +173,25 @@ export class BusinessService {
         total_reviews: MoreThanOrEqual(1),
       },
       relations: ['category', 'tags', 'certifications'],
-      order: { 
+      order: {
         average_rating: 'DESC',
-        total_reviews: 'DESC'
+        total_reviews: 'DESC',
       },
       take: 5,
     });
 
     if (businesses.length === 0) {
-      throw new NotFoundException('Aún no hay negocios calificados para mostrar.');
+      throw new NotFoundException(
+        'Aún no hay negocios calificados para mostrar.',
+      );
     }
 
-    return businesses.map(b => this.sanitizePublicBusiness(b));
+    return businesses.map((b) => this.sanitizePublicBusiness(b));
   }
 
   //Metodos gestion interna
 
-  async findForManagement(user: any) {
+  async findForManagement(user: User) {
     const roleName = user.rol.nombre;
 
     if (roleName === 'admin') {
@@ -160,10 +206,20 @@ export class BusinessService {
     });
   }
 
-
   async findAllForAdmin(filters: GetBusinessesFilterDto) {
-    
-    const { status, isActive, id_category, id_tag, search, sortBy, sortDirection = 'DESC', page = 1, limit = 10 } = filters;
+    const {
+      status,
+      isActive,
+      id_category,
+      id_tag,
+      id_departamento,
+      id_municipio,
+      search,
+      sortBy,
+      sortDirection = 'DESC',
+      page = 1,
+      limit = 10,
+    } = filters;
     const skip = (page - 1) * limit;
     const whereCondition: FindOptionsWhere<Business> = {};
 
@@ -176,7 +232,7 @@ export class BusinessService {
     }
 
     if (search) {
-      whereCondition.businessName = ILike(`%${search}%`); 
+      whereCondition.businessName = ILike(`%${search}%`);
     }
 
     if (id_category) {
@@ -187,19 +243,31 @@ export class BusinessService {
       whereCondition.tags = { id_tags: id_tag };
     }
 
+    if (id_municipio) {
+      whereCondition.municipio = { id_municipio };
+    } else if (id_departamento) {
+      whereCondition.municipio = { departamento: { id_departamento } };
+    }
+
     let orderClause: any = { createdAt: sortDirection };
 
     if (sortBy === BusinessSortOption.RATED) {
-      orderClause = { average_rating: sortDirection, total_reviews: sortDirection };
+      orderClause = {
+        average_rating: sortDirection,
+        total_reviews: sortDirection,
+      };
     } else if (sortBy === BusinessSortOption.REVIEWS) {
-      orderClause = { total_reviews: sortDirection, average_rating: sortDirection };
+      orderClause = {
+        total_reviews: sortDirection,
+        average_rating: sortDirection,
+      };
     } else if (sortBy === BusinessSortOption.RECENT) {
       orderClause = { createdAt: sortDirection };
     }
 
     const [businesses, total] = await this.businessRepository.findAndCount({
       where: whereCondition,
-      relations: ['user', 'category', 'tags', 'certifications'],
+      relations: ['user', 'category', 'tags', 'certifications', 'municipio', 'municipio.departamento'],
       order: orderClause,
       skip,
       take: limit,
@@ -207,24 +275,17 @@ export class BusinessService {
 
     if (total === 0) {
       const hasFilters = status || isActive !== undefined;
-      const errorMessage = hasFilters 
-        ? 'No se encontraron negocios que coincidan con los filtros especificados.' 
+      const errorMessage = hasFilters
+        ? 'No se encontraron negocios que coincidan con los filtros especificados.'
         : 'Aún no hay negocios registrados en la plataforma.';
       throw new NotFoundException(errorMessage);
     }
 
-    return createPaginationResponse(
-      businesses, 
-      total, 
-      page, 
-      limit
-    );
+    return createPaginationResponse(businesses, total, page, limit);
   }
 
-  
   async create(createBusinessDto: CreateBusinessDto, user: User) {
     try {
-
       const existingBusiness = await this.businessRepository.findOne({
         where: { user: { id_usuario: user.id_usuario } },
       });
@@ -234,15 +295,17 @@ export class BusinessService {
           'Solo puedes tener un negocio a la vez. Si tu negocio fue desactivado, no puedes crear uno nuevo.',
         );
       }
-      
+
       const nameExists = await this.businessRepository.findOne({
-        where: { businessName: ILike(createBusinessDto.businessName) }
+        where: { businessName: ILike(createBusinessDto.businessName) },
       });
       if (nameExists) {
-        throw new ConflictException(`El nombre '${createBusinessDto.businessName}' ya está registrado por otro negocio.`);
+        throw new ConflictException(
+          `El nombre '${createBusinessDto.businessName}' ya está registrado por otro negocio.`,
+        );
       }
 
-      const { categoryId, tagIds, ...businessData } = createBusinessDto;
+      const { categoryId, tagIds, municipioId, ...businessData } = createBusinessDto;
 
       const category = await this.categoryRepository.findOneBy({
         id_category: categoryId,
@@ -254,42 +317,64 @@ export class BusinessService {
         tags = await this.tagRepository.findBy({ id_tags: In(tagIds) });
       }
 
+      let municipio: Municipio | null = null;
+      if (municipioId) {
+        municipio = await this.municipioRepository.findOneBy({
+          id_municipio: municipioId,
+        });
+        if (!municipio) throw new NotFoundException('Municipio no encontrado');
+      }
+
       const newBusiness = this.businessRepository.create({
         ...businessData,
         user: user,
         category,
         tags,
+        municipio,
         status: BusinessStatus.PENDING,
-      }
-    );
-      
+      });
+
       const savedBusiness = await this.businessRepository.save(newBusiness);
       if (user.rol.nombre === 'USER') {
-        const ownerRole = await this.roleRepository.findOne({ where: { nombre: 'owner' } });
-        
+        const ownerRole = await this.roleRepository.findOne({
+          where: { nombre: 'owner' },
+        });
+
         if (ownerRole) {
-           await this.userRepository.update(user.id_usuario, { rol: ownerRole });
+          await this.userRepository.update(user.id_usuario, { rol: ownerRole });
         }
       }
-      await this.mailService.sendBusinessWelcome(user.email, savedBusiness.businessName);
+      await this.mailService.sendBusinessWelcome(
+        user.email,
+        savedBusiness.businessName,
+      );
 
       this.eventEmitter.emit('business.created', {
-        ownerId:      user.id_usuario,
-        businessId:   savedBusiness.id_business,
+        ownerId: user.id_usuario,
+        businessId: savedBusiness.id_business,
         businessName: savedBusiness.businessName,
       });
 
-      return { message: 'Negocio ' + savedBusiness.businessName + ' creado exitosamente y pendiente de revisión por un administrador' };
-
+      return {
+        message:
+          'Negocio ' +
+          savedBusiness.businessName +
+          ' creado exitosamente y pendiente de revisión por un administrador',
+      };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof ConflictException) throw error;
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof ConflictException
+      )
+        throw error;
       throw new InternalServerErrorException(
-        `Error al crear negocio: ${error.message}`,
+        `Error al crear negocio: ${(error as Error).message}`,
       );
     }
   }
 
-  async update(id: number, updateBusinessDto: UpdateBusinessDto, user: any) {
+  async update(id: number, updateBusinessDto: UpdateBusinessDto, user: User) {
     const roleName = user.rol.nombre;
 
     const business = await this.businessRepository.findOne({
@@ -304,24 +389,26 @@ export class BusinessService {
         `Tu negocio ${business.businessName} fue desactivado por incumplimientos, contacta a administración si crees que fue un error`,
       );
     }
-    
+
     if (roleName !== 'admin' && business.user.id_usuario !== user.id_usuario) {
       throw new ForbiddenException(
         'No tienes permiso para editar este negocio.',
       );
     }
 
-    const { categoryId, tagIds, ...businessData } = updateBusinessDto as any;
+    const { categoryId, tagIds, municipioId, ...businessData } = updateBusinessDto as any;
 
     if (businessData.businessName) {
       const nameExists = await this.businessRepository.findOne({
-        where: { 
+        where: {
           businessName: ILike(businessData.businessName),
-          id_business: Not(id)
-        }
+          id_business: Not(id),
+        },
       });
       if (nameExists) {
-        throw new ConflictException(`El nombre '${businessData.businessName}' ya está registrado por otro negocio.`);
+        throw new ConflictException(
+          `El nombre '${businessData.businessName}' ya está registrado por otro negocio.`,
+        );
       }
     }
 
@@ -329,7 +416,7 @@ export class BusinessService {
 
     if (roleName !== 'admin' && business.status === BusinessStatus.REJECTED) {
       business.status = BusinessStatus.PENDING;
-      business.rejectionReason = null; 
+      business.rejectionReason = null;
       wasResubmitted = true;
     }
 
@@ -347,29 +434,42 @@ export class BusinessService {
       }
     }
 
+    if (municipioId !== undefined) {
+      const municipio = await this.municipioRepository.findOneBy({
+        id_municipio: municipioId,
+      });
+      if (!municipio) throw new NotFoundException('Municipio no encontrado');
+      business.municipio = municipio;
+    }
+
     Object.assign(business, businessData);
     await this.businessRepository.save(business);
 
     if (wasResubmitted && business.user?.email) {
-      await this.mailService.sendBusinessResubmitted(business.user.email, business.businessName);
+      await this.mailService.sendBusinessResubmitted(
+        business.user.email,
+        business.businessName,
+      );
     }
 
     if (wasResubmitted && business.user?.id_usuario) {
       this.eventEmitter.emit('business.resubmitted', {
-        ownerId:      business.user.id_usuario,
-        businessId:   business.id_business,
+        ownerId: business.user.id_usuario,
+        businessId: business.id_business,
         businessName: business.businessName,
       });
     }
 
     return {
-      message: 'Negocio ' + business.businessName + ' actualizado exitosamente' +
-      (wasResubmitted ? ' y enviado nuevamente a revisión.' : ''),
+      message:
+        'Negocio ' +
+        business.businessName +
+        ' actualizado exitosamente' +
+        (wasResubmitted ? ' y enviado nuevamente a revisión.' : ''),
     };
-
   }
 
-  async remove(id: number, user: any) {
+  async remove(id: number, user: User) {
     const roleName = user.rol.nombre;
 
     const business = await this.businessRepository.findOne({
@@ -395,7 +495,11 @@ export class BusinessService {
     return { message: `El negocio con ID ${id} fue eliminado permanentemente` };
   }
 
-  async changeStatus(id: number, status: BusinessStatus, rejectionReason?: string) {
+  async changeStatus(
+    id: number,
+    status: BusinessStatus,
+    rejectionReason?: string,
+  ) {
     const business = await this.businessRepository.findOne({
       where: { id_business: id },
       relations: ['user'],
@@ -408,7 +512,8 @@ export class BusinessService {
     business.status = status;
 
     if (status === BusinessStatus.REJECTED) {
-      business.rejectionReason = rejectionReason || 'No cumple con las políticas de la plataforma.';
+      business.rejectionReason =
+        rejectionReason || 'No cumple con las políticas de la plataforma.';
     } else {
       business.rejectionReason = null;
     }
@@ -429,24 +534,23 @@ export class BusinessService {
       if (status === BusinessStatus.ACTIVE) {
         this.eventEmitter.emit('business.approved', {
           ownerId,
-          businessId:   updatedBusiness.id_business,
+          businessId: updatedBusiness.id_business,
           businessName: updatedBusiness.businessName,
         });
       } else if (status === BusinessStatus.REJECTED) {
         this.eventEmitter.emit('business.rejected', {
           ownerId,
-          businessId:      updatedBusiness.id_business,
-          businessName:    updatedBusiness.businessName,
+          businessId: updatedBusiness.id_business,
+          businessName: updatedBusiness.businessName,
           rejectionReason: updatedBusiness.rejectionReason,
         });
       }
     }
 
     return {
-      message: `El estado del negocio ${updatedBusiness.businessName} ha sido cambiado a ${status}`
+      message: `El estado del negocio ${updatedBusiness.businessName} ha sido cambiado a ${status}`,
     };
   }
-
 
   async toggleActive(id: number, isActive: boolean) {
     if (typeof isActive !== 'boolean') {
@@ -472,11 +576,15 @@ export class BusinessService {
     await this.businessRepository.save(business);
 
     if (business.user?.email) {
-      await this.mailService.sendBusinessToggle(business.user.email, business.businessName, isActive);
+      await this.mailService.sendBusinessToggle(
+        business.user.email,
+        business.businessName,
+        isActive,
+      );
     }
 
     return {
-      message: `El negocio ${business.businessName} ha sido ${isActive ? 'activado' : 'desactivado'} correctamente`
+      message: `El negocio ${business.businessName} ha sido ${isActive ? 'activado' : 'desactivado'} correctamente`,
     };
   }
 }

@@ -12,7 +12,12 @@ import { FollowsService } from '../services/follow.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/jwt-auth/roles.guard';
 import { Roles } from 'src/auth/decorator/roles.decorator';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 
@@ -21,7 +26,6 @@ import { PaginationDto } from 'src/shared/pagination/dto/pagination.dto';
 @Controller('follows')
 export class FollowsController {
   constructor(private readonly followsService: FollowsService) {}
-
 
   @Post(':businessId')
   @UseGuards(JwtAuthGuard)
@@ -48,7 +52,9 @@ export class FollowsController {
 
   @Get('my-following')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Listar los negocios que sigo (con categoría y tags)' })
+  @ApiOperation({
+    summary: 'Listar los negocios que sigo (con categoría y tags)',
+  })
   getFollowing(
     @CurrentUser() user: any,
     @Query() paginationDto: PaginationDto,
@@ -73,7 +79,6 @@ export class FollowsController {
     return this.followsService.getMyBusinessFollowers(user, paginationDto);
   }
 
-
   @Get('admin/business/:businessId/followers')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -82,6 +87,9 @@ export class FollowsController {
     @Param('businessId', ParseIntPipe) businessId: number,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.followsService.getBusinessFollowersForAdmin(businessId, paginationDto);
+    return this.followsService.getBusinessFollowersForAdmin(
+      businessId,
+      paginationDto,
+    );
   }
 }

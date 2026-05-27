@@ -79,10 +79,17 @@ export class NotificationsGateway
     this.logger.log(`Cliente ${client.id} se unió al room: ${room}`);
 
     try {
-      const { data } = await this.notificationsService.getNotificationsForUser(payload.userId, 1, 30);
+      const { data } = await this.notificationsService.getNotificationsForUser(
+        payload.userId,
+        1,
+        30,
+      );
       client.emit('notifications:init', data);
     } catch (err) {
-      this.logger.error('Error enviando notificaciones iniciales al usuario:', err);
+      this.logger.error(
+        'Error enviando notificaciones iniciales al usuario:',
+        err,
+      );
     }
 
     return { event: 'joined', room };
@@ -116,8 +123,7 @@ export class NotificationsGateway
   }
 
   @OnEvent('sentiment.review.suspicious')
-  handleSuspiciousReview(_payload: SentimentNotificationDto) {
-  }
+  handleSuspiciousReview(_payload: SentimentNotificationDto) {}
 
   @OnEvent('sentiment.alert.critical_rating')
   handleCriticalRating(payload: SentimentNotificationDto) {
@@ -130,12 +136,16 @@ export class NotificationsGateway
 
     this.getOwnerId(payload.businessId).then((ownerId) => {
       if (!ownerId) return;
-      this.notificationsService.create({
-        ownerId,
-        businessId: payload.businessId,
-        alertType: NotificationAlertType.CRITICAL_RATING,
-        payload: alertPayload,
-      }).catch((err) => this.logger.error('Error persistiendo critical_rating:', err));
+      this.notificationsService
+        .create({
+          ownerId,
+          businessId: payload.businessId,
+          alertType: NotificationAlertType.CRITICAL_RATING,
+          payload: alertPayload,
+        })
+        .catch((err) =>
+          this.logger.error('Error persistiendo critical_rating:', err),
+        );
     });
   }
 
@@ -150,12 +160,16 @@ export class NotificationsGateway
 
     this.getOwnerId(payload.businessId).then((ownerId) => {
       if (!ownerId) return;
-      this.notificationsService.create({
-        ownerId,
-        businessId: payload.businessId,
-        alertType: NotificationAlertType.ACCUMULATED_NEGATIVES,
-        payload: alertPayload,
-      }).catch((err) => this.logger.error('Error persistiendo accumulated_negatives:', err));
+      this.notificationsService
+        .create({
+          ownerId,
+          businessId: payload.businessId,
+          alertType: NotificationAlertType.ACCUMULATED_NEGATIVES,
+          payload: alertPayload,
+        })
+        .catch((err) =>
+          this.logger.error('Error persistiendo accumulated_negatives:', err),
+        );
     });
   }
 
@@ -202,20 +216,18 @@ export class NotificationsGateway
 
         try {
           const saved = await this.notificationsService.create({
-            ownerId:    followerId,
+            ownerId: followerId,
             businessId: payload.businessId,
-            alertType:  NotificationAlertType.NEW_PRODUCT,
-            payload:    alertPayload,
+            alertType: NotificationAlertType.NEW_PRODUCT,
+            payload: alertPayload,
           });
 
-          this.server
-            .to(`user_${followerId}`)
-            .emit('product:new', {
-              ...alertPayload,
-              id:        saved.id,
-              timestamp: saved.createdAt.toISOString(),
-              isRead:    false,
-            });
+          this.server.to(`user_${followerId}`).emit('product:new', {
+            ...alertPayload,
+            id: saved.id,
+            timestamp: saved.createdAt.toISOString(),
+            isRead: false,
+          });
         } catch (err) {
           this.logger.error('Error persistiendo new_product:', err);
         }
@@ -232,28 +244,26 @@ export class NotificationsGateway
   @OnEvent('review.hidden')
   async handleReviewHidden(payload: {
     reviewAuthorId: number;
-    reviewId:       number;
-    businessId:     number;
-    businessName:   string;
+    reviewId: number;
+    businessId: number;
+    businessName: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'review_hidden' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.reviewAuthorId,
+        ownerId: payload.reviewAuthorId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.REVIEW_HIDDEN,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.REVIEW_HIDDEN,
+        payload: alertPayload,
       });
 
-      this.server
-        .to(`user_${payload.reviewAuthorId}`)
-        .emit('review:hidden', {
-          ...alertPayload,
-          id:        saved.id,
-          timestamp: saved.createdAt.toISOString(),
-          isRead:    false,
-        });
+      this.server.to(`user_${payload.reviewAuthorId}`).emit('review:hidden', {
+        ...alertPayload,
+        id: saved.id,
+        timestamp: saved.createdAt.toISOString(),
+        isRead: false,
+      });
 
       this.logger.log(
         ` Notificación review_hidden enviada al usuario ${payload.reviewAuthorId} (reseña #${payload.reviewId})`,
@@ -266,28 +276,26 @@ export class NotificationsGateway
   @OnEvent('review.restored_by_moderation')
   async handleReviewRestoredByModeration(payload: {
     reviewAuthorId: number;
-    reviewId:       number;
-    businessId:     number;
-    businessName:   string;
+    reviewId: number;
+    businessId: number;
+    businessName: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'review_restored' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.reviewAuthorId,
+        ownerId: payload.reviewAuthorId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.REVIEW_RESTORED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.REVIEW_RESTORED,
+        payload: alertPayload,
       });
 
-      this.server
-        .to(`user_${payload.reviewAuthorId}`)
-        .emit('review:restored', {
-          ...alertPayload,
-          id:        saved.id,
-          timestamp: saved.createdAt.toISOString(),
-          isRead:    false,
-        });
+      this.server.to(`user_${payload.reviewAuthorId}`).emit('review:restored', {
+        ...alertPayload,
+        id: saved.id,
+        timestamp: saved.createdAt.toISOString(),
+        isRead: false,
+      });
 
       this.logger.log(
         ` Notificación review_restored enviada al usuario ${payload.reviewAuthorId} (reseña #${payload.reviewId})`,
@@ -300,30 +308,28 @@ export class NotificationsGateway
   @OnEvent('review.deleted_by_moderation')
   async handleReviewDeletedByModeration(payload: {
     reviewAuthorId: number;
-    reviewId:       number;
-    businessId:     number;
-    businessName:   string;
-    penaltyCount:   number;
-    isBanned:       boolean;
+    reviewId: number;
+    businessId: number;
+    businessName: string;
+    penaltyCount: number;
+    isBanned: boolean;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'review_deleted' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.reviewAuthorId,
+        ownerId: payload.reviewAuthorId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.REVIEW_DELETED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.REVIEW_DELETED,
+        payload: alertPayload,
       });
 
-      this.server
-        .to(`user_${payload.reviewAuthorId}`)
-        .emit('review:deleted', {
-          ...alertPayload,
-          id:        saved.id,
-          timestamp: saved.createdAt.toISOString(),
-          isRead:    false,
-        });
+      this.server.to(`user_${payload.reviewAuthorId}`).emit('review:deleted', {
+        ...alertPayload,
+        id: saved.id,
+        timestamp: saved.createdAt.toISOString(),
+        isRead: false,
+      });
 
       this.logger.log(
         `🗑️ Notificación review_deleted enviada al usuario ${payload.reviewAuthorId} (reseña #${payload.reviewId}, penalizaciones: ${payload.penaltyCount}, baneado: ${payload.isBanned})`,
@@ -333,33 +339,36 @@ export class NotificationsGateway
     }
   }
 
-
   @OnEvent('business.created')
   async handleBusinessCreated(payload: {
-    ownerId:      number;
-    businessId:   number;
+    ownerId: number;
+    businessId: number;
     businessName: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'business_created' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.BUSINESS_CREATED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.BUSINESS_CREATED,
+        payload: alertPayload,
       });
 
       const event = {
         ...alertPayload,
-        id:        saved.id,
+        id: saved.id,
         timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
+        isRead: false,
       };
       this.server.to(`user_${payload.ownerId}`).emit('business:created', event);
-      this.server.to(`business_${payload.businessId}`).emit('business:created', event);
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('business:created', event);
 
-      this.logger.log(`Notificación business_created enviada al owner ${payload.ownerId}`);
+      this.logger.log(
+        `Notificación business_created enviada al owner ${payload.ownerId}`,
+      );
     } catch (err) {
       this.logger.error('Error en handleBusinessCreated:', err);
     }
@@ -367,28 +376,32 @@ export class NotificationsGateway
 
   @OnEvent('business.approved')
   async handleBusinessApproved(payload: {
-    ownerId:      number;
-    businessId:   number;
+    ownerId: number;
+    businessId: number;
     businessName: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'business_approved' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.BUSINESS_APPROVED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.BUSINESS_APPROVED,
+        payload: alertPayload,
       });
 
-      this.server.to(`business_${payload.businessId}`).emit('business:approved', {
-        ...alertPayload,
-        id:        saved.id,
-        timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
-      });
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('business:approved', {
+          ...alertPayload,
+          id: saved.id,
+          timestamp: saved.createdAt.toISOString(),
+          isRead: false,
+        });
 
-      this.logger.log(`Notificación business_approved enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+      this.logger.log(
+        `Notificación business_approved enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`,
+      );
     } catch (err) {
       this.logger.error('Error en handleBusinessApproved:', err);
     }
@@ -396,29 +409,33 @@ export class NotificationsGateway
 
   @OnEvent('business.rejected')
   async handleBusinessRejected(payload: {
-    ownerId:         number;
-    businessId:      number;
-    businessName:    string;
+    ownerId: number;
+    businessId: number;
+    businessName: string;
     rejectionReason: string | null;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'business_rejected' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.BUSINESS_REJECTED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.BUSINESS_REJECTED,
+        payload: alertPayload,
       });
 
-      this.server.to(`business_${payload.businessId}`).emit('business:rejected', {
-        ...alertPayload,
-        id:        saved.id,
-        timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
-      });
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('business:rejected', {
+          ...alertPayload,
+          id: saved.id,
+          timestamp: saved.createdAt.toISOString(),
+          isRead: false,
+        });
 
-      this.logger.log(`Notificación business_rejected enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+      this.logger.log(
+        `Notificación business_rejected enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`,
+      );
     } catch (err) {
       this.logger.error('Error en handleBusinessRejected:', err);
     }
@@ -426,28 +443,32 @@ export class NotificationsGateway
 
   @OnEvent('business.resubmitted')
   async handleBusinessResubmitted(payload: {
-    ownerId:      number;
-    businessId:   number;
+    ownerId: number;
+    businessId: number;
     businessName: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'business_resubmitted' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.BUSINESS_RESUBMITTED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.BUSINESS_RESUBMITTED,
+        payload: alertPayload,
       });
 
-      this.server.to(`business_${payload.businessId}`).emit('business:resubmitted', {
-        ...alertPayload,
-        id:        saved.id,
-        timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
-      });
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('business:resubmitted', {
+          ...alertPayload,
+          id: saved.id,
+          timestamp: saved.createdAt.toISOString(),
+          isRead: false,
+        });
 
-      this.logger.log(`Notificación business_resubmitted enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+      this.logger.log(
+        `Notificación business_resubmitted enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`,
+      );
     } catch (err) {
       this.logger.error('Error en handleBusinessResubmitted:', err);
     }
@@ -455,30 +476,34 @@ export class NotificationsGateway
 
   @OnEvent('certification.approved')
   async handleCertificationApproved(payload: {
-    ownerId:           number;
-    businessId:        number;
-    businessName:      string;
+    ownerId: number;
+    businessId: number;
+    businessName: string;
     certificationName: string;
-    issuingEntity:     string;
+    issuingEntity: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'certification_approved' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.CERTIFICATION_APPROVED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.CERTIFICATION_APPROVED,
+        payload: alertPayload,
       });
 
-      this.server.to(`business_${payload.businessId}`).emit('certification:approved', {
-        ...alertPayload,
-        id:        saved.id,
-        timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
-      });
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('certification:approved', {
+          ...alertPayload,
+          id: saved.id,
+          timestamp: saved.createdAt.toISOString(),
+          isRead: false,
+        });
 
-      this.logger.log(`Notificación certification_approved enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+      this.logger.log(
+        `Notificación certification_approved enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`,
+      );
     } catch (err) {
       this.logger.error('Error en handleCertificationApproved:', err);
     }
@@ -486,30 +511,34 @@ export class NotificationsGateway
 
   @OnEvent('certification.rejected')
   async handleCertificationRejected(payload: {
-    ownerId:           number;
-    businessId:        number;
-    businessName:      string;
+    ownerId: number;
+    businessId: number;
+    businessName: string;
     certificationName: string;
-    issuingEntity:     string;
+    issuingEntity: string;
   }) {
     try {
       const alertPayload = { ...payload, alertType: 'certification_rejected' };
 
       const saved = await this.notificationsService.create({
-        ownerId:    payload.ownerId,
+        ownerId: payload.ownerId,
         businessId: payload.businessId,
-        alertType:  NotificationAlertType.CERTIFICATION_REJECTED,
-        payload:    alertPayload,
+        alertType: NotificationAlertType.CERTIFICATION_REJECTED,
+        payload: alertPayload,
       });
 
-      this.server.to(`business_${payload.businessId}`).emit('certification:rejected', {
-        ...alertPayload,
-        id:        saved.id,
-        timestamp: saved.createdAt.toISOString(),
-        isRead:    false,
-      });
+      this.server
+        .to(`business_${payload.businessId}`)
+        .emit('certification:rejected', {
+          ...alertPayload,
+          id: saved.id,
+          timestamp: saved.createdAt.toISOString(),
+          isRead: false,
+        });
 
-      this.logger.log(`Notificación certification_rejected enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`);
+      this.logger.log(
+        `Notificación certification_rejected enviada al owner ${payload.ownerId} (negocio #${payload.businessId})`,
+      );
     } catch (err) {
       this.logger.error('Error en handleCertificationRejected:', err);
     }

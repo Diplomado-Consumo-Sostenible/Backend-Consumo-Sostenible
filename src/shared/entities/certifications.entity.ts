@@ -1,6 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Business } from './business.entity';
-
 
 export enum CertificationStatus {
   ACTIVE = 'Active',
@@ -21,17 +26,20 @@ export class Certification {
 
   @Column()
   verification_url: string;
-  
+
   @Column()
   badge_url: string;
 
-  @Column({ type: 'enum',
-      enum: CertificationStatus,
-      default: CertificationStatus.PENDING, 
-    })
+  @Column({
+    type: 'enum',
+    enum: CertificationStatus,
+    default: CertificationStatus.PENDING,
+  })
   status: CertificationStatus;
 
-  @ManyToOne(() => Business, (business) => business.certifications, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Business, (business) => business.certifications, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'id_business' })
   business: Business;
 }

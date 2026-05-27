@@ -12,7 +12,8 @@ export class CreateProductDto {
 
   @ApiProperty({
     description: 'Descripción detallada del producto',
-    example: 'Deliciosa hamburguesa vegana hecha a base de lentejas con pan artesanal.',
+    example:
+      'Deliciosa hamburguesa vegana hecha a base de lentejas con pan artesanal.',
   })
   @IsNotEmpty()
   @IsString()
@@ -22,7 +23,7 @@ export class CreateProductDto {
     description: 'Precio del producto en formato decimal',
     example: 9.99,
   })
-  @IsNotEmpty() 
+  @IsNotEmpty()
   price: number;
 
   @ApiPropertyOptional({

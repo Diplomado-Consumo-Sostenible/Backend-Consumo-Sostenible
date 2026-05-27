@@ -38,6 +38,10 @@ import { ReviewBlock } from './entities/review-block.entity';
 import { ReviewReport } from './entities/review-report.entity';
 import { Notification } from './entities/notification.entity';
 import { NotificationRepository } from './repositories/notification.repository';
+import { Departamento } from './entities/departamento.entity';
+import { Municipio } from './entities/municipio.entity';
+import { DepartamentoRepository } from './repositories/departamento.repository';
+import { MunicipioRepository } from './repositories/municipio.repository';
 
 @Module({})
 export class SharedModule {
@@ -98,6 +102,8 @@ export class SharedModule {
           ReviewBlock,
           ReviewReport,
           Notification,
+          Departamento,
+          Municipio,
         ]),
         MailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -128,6 +134,8 @@ export class SharedModule {
         ReviewBlockRepository,
         ReviewReportRepository,
         NotificationRepository,
+        DepartamentoRepository,
+        MunicipioRepository,
       ],
       exports: [
         TypeOrmModule,
@@ -149,6 +157,8 @@ export class SharedModule {
         ReviewBlockRepository,
         ReviewReportRepository,
         NotificationRepository,
+        DepartamentoRepository,
+        MunicipioRepository,
       ],
     };
   }

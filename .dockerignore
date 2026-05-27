@@ -4,6 +4,7 @@ node_modules/
 # Salida compilada anterior
 dist/
 build/
+*.tsbuildinfo
 
 # Git
 .git/

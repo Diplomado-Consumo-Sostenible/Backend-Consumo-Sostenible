@@ -17,12 +17,12 @@ export enum ReportReason {
   HARASSMENT = 'Acoso o amenazas',
   PERSONAL_INFO = 'Información personal expuesta',
   OTHER = 'Otro motivo',
-} 
+}
 
 export enum ReportStatus {
   PENDING = 'Pendiente',
   RESOLVED = 'Resuelto',
-  DISMISSED = 'Descartado', 
+  DISMISSED = 'Descartado',
 }
 
 @Entity('review_reports')
@@ -50,11 +50,9 @@ export class ReviewReport {
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-
   @ManyToOne(() => User, (user) => user.reviewReports, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_usuario' })
   user: User;
-
 
   @ManyToOne(() => Review, (review) => review.reports, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_review' })

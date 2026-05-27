@@ -4,12 +4,12 @@ import { PaginationDto } from '../../shared/pagination/dto/pagination.dto';
 
 export enum UserRoleFilter {
   ADMIN = 'ADMIN',
-  USER  = 'USER',
+  USER = 'USER',
   OWNER = 'owner',
 }
 
 export enum UserSortBy {
-  EMAIL      = 'email',
+  EMAIL = 'email',
   CREATED_AT = 'createdAt',
 }
 

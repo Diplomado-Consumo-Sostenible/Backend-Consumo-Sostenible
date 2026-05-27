@@ -14,15 +14,17 @@ import { createPaginationResponse } from '../../shared/pagination/pagination.hel
 import { ReviewRepository } from 'src/shared/repositories/review.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { UpdateReviewDto } from '../dto/update-review.dto';
-import { GetBusinessReviewsFilterDto, SortOrder } from '../dto/get-business-reviews-filter.dto';
+import {
+  GetBusinessReviewsFilterDto,
+  SortOrder,
+} from '../dto/get-business-reviews-filter.dto';
 import { AiService } from 'src/shared/ai/ai.service';
 import { MailService } from 'src/mail/mail.service';
 import { ReviewSentiment } from '../../shared/entities/review.entity';
 import { ReviewBlockRepository } from 'src/shared/repositories/review-block.repository';
 import { MoreThan } from 'typeorm';
-import {
-  SentimentNotificationDto,
-} from '../../notifications/dto/sentiment-notification.dto';
+import { User } from 'src/shared/entities/user.entity';
+import { SentimentNotificationDto } from '../../notifications/dto/sentiment-notification.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -49,16 +51,27 @@ export class ReviewsService {
     const CRITICAL_RATING = 3.5;
     const NEGATIVE_REVIEWS_LIMIT = 5;
 
-    if (newAvg > 0 && newAvg < CRITICAL_RATING && (oldAvg >= CRITICAL_RATING || oldAvg === 0)) {
+    if (
+      newAvg > 0 &&
+      newAvg < CRITICAL_RATING &&
+      (oldAvg >= CRITICAL_RATING || oldAvg === 0)
+    ) {
       try {
-        await this.mailService.sendCriticalRatingAlert(email, businessName, newAvg);
+        await this.mailService.sendCriticalRatingAlert(
+          email,
+          businessName,
+          newAvg,
+        );
         this.eventEmitter.emit('sentiment.alert.critical_rating', {
           ...basePayload,
           alertType: 'critical_rating',
           currentRating: newAvg,
         });
       } catch (error) {
-        this.logger.error(`Error enviando alerta crítica al negocio ${businessId}:`, error);
+        this.logger.error(
+          `Error enviando alerta crítica al negocio ${businessId}:`,
+          error,
+        );
       }
     }
 
@@ -77,14 +90,21 @@ export class ReviewsService {
 
       if (totalNegatives > 0 && totalNegatives % NEGATIVE_REVIEWS_LIMIT === 0) {
         try {
-          await this.mailService.sendAccumulatedNegativesAlert(email, businessName, totalNegatives);
+          await this.mailService.sendAccumulatedNegativesAlert(
+            email,
+            businessName,
+            totalNegatives,
+          );
           this.eventEmitter.emit('sentiment.alert.accumulated_negatives', {
             ...basePayload,
             alertType: 'accumulated_negatives',
             totalNegatives,
           });
         } catch (error) {
-          this.logger.error(`Error enviando alerta de acumulación al negocio ${businessId}:`, error);
+          this.logger.error(
+            `Error enviando alerta de acumulación al negocio ${businessId}:`,
+            error,
+          );
         }
       }
     }
@@ -119,7 +139,11 @@ export class ReviewsService {
     return { oldAvg, newAvg: finalAvg };
   }
 
-  async createReview(businessId: number, user: any, createReviewDto: CreateReviewDto) {
+  async createReview(
+    businessId: number,
+    user: User,
+    createReviewDto: CreateReviewDto,
+  ) {
     if (!user.isActive) {
       throw new ForbiddenException('Tu cuenta está inhabilitada.');
     }
@@ -132,7 +156,9 @@ export class ReviewsService {
     });
 
     if (isBlocked) {
-      throw new ForbiddenException('Has sido penalizado y no puedes volver a calificar este negocio.');
+      throw new ForbiddenException(
+        'Has sido penalizado y no puedes volver a calificar este negocio.',
+      );
     }
 
     const business = await this.businessRepository.findOne({
@@ -143,7 +169,9 @@ export class ReviewsService {
     if (!business) throw new NotFoundException('Negocio no encontrado');
 
     if (business.status !== BusinessStatus.ACTIVE || !business.isActive) {
-      throw new BadRequestException('Este negocio no está disponible para recibir reseñas.');
+      throw new BadRequestException(
+        'Este negocio no está disponible para recibir reseñas.',
+      );
     }
 
     if (business.user.id_usuario === user.id_usuario) {
@@ -151,18 +179,25 @@ export class ReviewsService {
     }
 
     const existingReview = await this.reviewRepository.findOne({
-      where: { user: { id_usuario: user.id_usuario }, business: { id_business: businessId } },
+      where: {
+        user: { id_usuario: user.id_usuario },
+        business: { id_business: businessId },
+      },
     });
 
-    if (existingReview) throw new ConflictException('Ya calificaste este negocio.');
+    if (existingReview)
+      throw new ConflictException('Ya calificaste este negocio.');
 
-    const aiResult = await this.aiService.analyzeSentiment(createReviewDto.comment);
+    const aiResult = await this.aiService.analyzeSentiment(
+      createReviewDto.comment,
+    );
 
     const starDifference = Math.abs(createReviewDto.rating - aiResult.aiStars);
 
     if (starDifference >= 3) {
       throw new BadRequestException({
-        message: 'Tu reseña parece incongruente entre la calificación dada y el contenido del comentario.',
+        message:
+          'Tu reseña parece incongruente entre la calificación dada y el contenido del comentario.',
         code: 'SUSPICIOUS_REVIEW',
         aiStars: aiResult.aiStars,
       });
@@ -210,7 +245,10 @@ export class ReviewsService {
     return { message: 'Reseña creada con éxito.' };
   }
 
-  async getBusinessReviews(businessId: number, filterDto: GetBusinessReviewsFilterDto) {
+  async getBusinessReviews(
+    businessId: number,
+    filterDto: GetBusinessReviewsFilterDto,
+  ) {
     const { page = 1, limit = 10, rating, order = SortOrder.DESC } = filterDto;
     const skip = (page - 1) * limit;
 
@@ -247,23 +285,24 @@ export class ReviewsService {
     return createPaginationResponse(formattedReviews, total, page, limit);
   }
 
-  async getMyReviewForBusiness(businessId: number, user: any) {
+  async getMyReviewForBusiness(businessId: number, user: User) {
     const review = await this.reviewRepository.findOne({
       where: {
-        user:     { id_usuario: user.id_usuario },
+        user: { id_usuario: user.id_usuario },
         business: { id_business: businessId },
       },
     });
-    if (!review) throw new NotFoundException('No tienes una reseña para este negocio.');
+    if (!review)
+      throw new NotFoundException('No tienes una reseña para este negocio.');
     return {
       id_review: review.id_review,
-      rating:    review.rating,
-      comment:   review.comment,
-      fecha:     review.created_at,
+      rating: review.rating,
+      comment: review.comment,
+      fecha: review.created_at,
     };
   }
 
-  async getMyReviews(user: any, paginationDto: PaginationDto) {
+  async getMyReviews(user: User, paginationDto: PaginationDto) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
@@ -293,7 +332,11 @@ export class ReviewsService {
     return createPaginationResponse(formattedReviews, total, page, limit);
   }
 
-  async updateReview(reviewId: number, user: any, updateReviewDto: UpdateReviewDto) {
+  async updateReview(
+    reviewId: number,
+    user: User,
+    updateReviewDto: UpdateReviewDto,
+  ) {
     if (!user.isActive) {
       throw new ForbiddenException('Cuenta inhabilitada.');
     }
@@ -304,7 +347,8 @@ export class ReviewsService {
     });
 
     if (!review) throw new NotFoundException('Reseña no encontrada.');
-    if (review.user.id_usuario !== user.id_usuario) throw new ForbiddenException('No es tu reseña.');
+    if (review.user.id_usuario !== user.id_usuario)
+      throw new ForbiddenException('No es tu reseña.');
 
     const business = await this.businessRepository.findOne({
       where: { id_business: review.business.id_business },
@@ -312,10 +356,14 @@ export class ReviewsService {
     });
     if (!business) throw new NotFoundException('Negocio no encontrado.');
     if (!business.isActive || business.status !== BusinessStatus.ACTIVE) {
-      throw new BadRequestException('El negocio ya no acepta cambios en sus reseñas.');
+      throw new BadRequestException(
+        'El negocio ya no acepta cambios en sus reseñas.',
+      );
     }
 
-    let aiResult: Awaited<ReturnType<typeof this.aiService.analyzeSentiment>> | null = null;
+    let aiResult: Awaited<
+      ReturnType<typeof this.aiService.analyzeSentiment>
+    > | null = null;
 
     if (updateReviewDto.comment || updateReviewDto.rating) {
       const textToAnalyze = updateReviewDto.comment || review.comment;
@@ -326,7 +374,8 @@ export class ReviewsService {
 
       if (starDifference >= 3) {
         throw new BadRequestException({
-          message: 'Tu reseña parece incongruente entre la calificación y el contenido del comentario.',
+          message:
+            'Tu reseña parece incongruente entre la calificación y el contenido del comentario.',
           code: 'SUSPICIOUS_REVIEW',
           aiStars: aiResult.aiStars,
         });
@@ -340,7 +389,9 @@ export class ReviewsService {
     await this.reviewRepository.save(review);
 
     if (updateReviewDto.rating || updateReviewDto.comment) {
-      const { oldAvg, newAvg } = await this.updateBusinessRating(review.business.id_business);
+      const { oldAvg, newAvg } = await this.updateBusinessRating(
+        review.business.id_business,
+      );
 
       if (aiResult && business.user?.email) {
         const notificationPayload: SentimentNotificationDto = {
@@ -359,7 +410,10 @@ export class ReviewsService {
         this.eventEmitter.emit('sentiment.review.created', notificationPayload);
 
         if (review.is_suspicious) {
-          this.eventEmitter.emit('sentiment.review.suspicious', notificationPayload);
+          this.eventEmitter.emit(
+            'sentiment.review.suspicious',
+            notificationPayload,
+          );
         }
 
         await this.checkAndSendBusinessAlerts(
@@ -377,7 +431,7 @@ export class ReviewsService {
     return { message: 'Reseña actualizada correctamente.' };
   }
 
-  async deleteReview(reviewId: number, user: any) {
+  async deleteReview(reviewId: number, user: User) {
     const review = await this.reviewRepository.findOne({
       where: { id_review: reviewId },
       relations: ['user', 'business'],
@@ -387,8 +441,13 @@ export class ReviewsService {
       throw new NotFoundException('La reseña no existe.');
     }
 
-    if (review.user.id_usuario !== user.id_usuario && user.rol.nombre !== 'admin') {
-      throw new ForbiddenException('No tienes permisos para eliminar esta reseña.');
+    if (
+      review.user.id_usuario !== user.id_usuario &&
+      user.rol.nombre !== 'admin'
+    ) {
+      throw new ForbiddenException(
+        'No tienes permisos para eliminar esta reseña.',
+      );
     }
 
     const businessId = review.business.id_business;
@@ -410,7 +469,10 @@ export class ReviewsService {
       take: limit,
     });
 
-    if (total === 0) throw new NotFoundException('No hay reseñas sospechosas en este momento.');
+    if (total === 0)
+      throw new NotFoundException(
+        'No hay reseñas sospechosas en este momento.',
+      );
 
     const formattedReviews = reviews.map((r) => ({
       id_review: r.id_review,

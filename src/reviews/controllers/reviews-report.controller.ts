@@ -1,4 +1,14 @@
-import { Controller, Post, Param, Body, UseGuards, ParseIntPipe, Get, Query, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  ParseIntPipe,
+  Get,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsReportService } from '../services/reviews-report.service';
 import { CreateReviewReportDto } from '../dto/create-review-report.dto';
@@ -14,18 +24,14 @@ import { GetReportedReviewsFilterDto } from '../dto/get-reported-reviews-filter.
 export class ReviewsReportController {
   constructor(private readonly reportsService: ReviewsReportService) {}
 
-
   @Get('reported/admin-queue')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN') 
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Ver reseñas reportadas filtradas por motivo' })
-  getReportedReviews(
-    @Query() filterDto: GetReportedReviewsFilterDto,
-  ) {
+  getReportedReviews(@Query() filterDto: GetReportedReviewsFilterDto) {
     return this.reportsService.getReportedReviews(filterDto);
   }
-
 
   @Post(':reviewId')
   @ApiBearerAuth()

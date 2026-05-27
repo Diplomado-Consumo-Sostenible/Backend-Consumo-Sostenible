@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 // eslint-disable-next-line @typescript-eslint/require-await
 export const config = async () => {
   const rawOrigin = process.env.APP_CORS_ORIGIN || '';
