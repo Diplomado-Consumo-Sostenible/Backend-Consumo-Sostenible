@@ -101,13 +101,10 @@ export class AiService {
     }
 
     try {
-      // 1. Inicializas el cliente con tu llave
       const genAI = new GoogleGenerativeAI(this.GEMINI_API_KEY);
 
-      // 2. Llamas al modelo usando la variable de la clase
       const model = genAI.getGenerativeModel({ model: this.GEMINI_MODEL });
 
-      // 3. Generas el contenido
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: maxTokens },
@@ -208,24 +205,26 @@ Máximo 200 palabras. Tono profesional pero accesible.`;
       .map((c) => `[${c.sentiment} ${c.rating}★] ${c.comment}`)
       .join('\n');
 
-    const prompt = `Eres un sistema de síntesis de opiniones para EcoVida.
+    const prompt = `Eres un sistema de síntesis de reseñas para EcoVida, plataforma de negocios sostenibles.
 
 Negocio: "${businessName}"
-Total histórico: ${total} reseñas | Promedio: ${avgRating}★
-Positivas: ${positive} | Neutrales: ${neutral} | Negativas: ${negative}
+Datos: ${total} reseñas | Promedio: ${avgRating}★ | ${positive} positivas · ${neutral} neutras · ${negative} negativas
 
-MUESTRA REPRESENTATIVA (${sample.length} reseñas):
+RESEÑAS (muestra de ${sample.length}):
 ${sampleText}
 
-Escribe UNA reseña general consolidada de exactamente 150 palabras en primera persona plural ("los clientes notamos", "en general encontramos"). Esta reseña debe:
-- Representar la opinión colectiva real de todos los clientes
-- Mencionar los aspectos más elogiados con especificidad
-- Señalar los problemas más recurrentes honestamente
-- Transmitir la sensación general (positiva, mixta, o negativa)
-- Ser útil para futuros clientes que quieran decidir si visitar el negocio
+Genera un resumen MUY CORTO al estilo de Mercado Libre: directo, escaneable, útil para decidir en segundos.
 
-No uses el formato de lista. Escribe párrafos fluidos. Tono objetivo, honesto y útil.`;
+Formato obligatorio (respeta exactamente este esquema):
+Lo que más destacan: [máximo 10 palabras con los 2 puntos fuertes]
+Lo que más critican: [máximo 10 palabras con el principal problema, o "Sin quejas frecuentes" si no hay]
+En resumen: [1 sola frase de máximo 20 palabras con la impresión general]
 
-    return this.callGemini(prompt, 400);
+Reglas:
+- Máximo 50 palabras en total
+- Sin introducciones ni cierres
+- Sin inventar datos que no estén en las reseñas`;
+
+    return this.callGemini(prompt, 180);
   }
 }

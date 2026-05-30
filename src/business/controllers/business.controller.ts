@@ -27,6 +27,7 @@ import { BusinessStatus } from '../../shared/entities/business.entity';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
 import { PublicBusinessFilterDto } from '../dto/public-business-filter.dto';
+import { DeleteBusinessDto } from '../dto/delete-business.dto';
 
 @ApiTags('business')
 @ApiBearerAuth()
@@ -132,17 +133,83 @@ export class BusinessController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Negocio eliminado exitosamente' })
+  @ApiOperation({
+    summary: 'Desactivar un negocio — borrado lógico (Dueño o Admin)',
+    description:
+      'El dueño debe confirmar su contraseña en el body. El administrador puede desactivarlo sin contraseña.',
+  })
+  @ApiBody({
+    type: DeleteBusinessDto,
+    required: false,
+    description: 'Contraseña de confirmación (solo requerida para el dueño)',
+  })
+  @ApiResponse({ status: 200, description: 'Negocio desactivado exitosamente' })
+  @ApiResponse({
+    status: 400,
+    description: 'Contraseña no proporcionada (owner)',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Contraseña incorrecta',
+  })
   @ApiResponse({
     status: 403,
-    description: 'Prohibido. Requiere rol de owner o admin.',
+    description: 'Prohibido. Sin permiso sobre este negocio.',
   })
   @ApiResponse({ status: 404, description: 'Negocio no encontrado' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('owner', 'ADMIN')
-  @ApiOperation({ summary: 'Eliminar un negocio (Dueño o Admin)' })
-  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
-    return this.businessService.remove(id, user);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() deleteBusinessDto: DeleteBusinessDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.businessService.remove(id, deleteBusinessDto, user);
+  }
+
+  @Patch(':id/request-reactivation')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Solicitar reactivación de un negocio desactivado por admin (Dueño)' })
+  @ApiResponse({ status: 200, description: 'Solicitud de reactivación enviada.' })
+  @ApiResponse({ status: 400, description: 'El negocio ya está activo.' })
+  @ApiResponse({ status: 403, description: 'Sin permiso sobre este negocio.' })
+  @ApiResponse({ status: 404, description: 'Negocio no encontrado.' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('owner', 'ADMIN')
+  requestReactivation(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.businessService.requestReactivation(id, user);
+  }
+
+  @Patch(':id/reactivate')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Reactivar un negocio eliminado por el dueño (Dueño o Admin)',
+    description:
+      'Revierte el borrado lógico del dueño. Solo funciona si el negocio fue eliminado con DELETE /business/:id.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Negocio reactivado y visible nuevamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'El negocio no está en estado de eliminación por el dueño.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Sin permiso o negocio baneado por moderación.',
+  })
+  @ApiResponse({ status: 404, description: 'Negocio no encontrado.' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('owner', 'ADMIN')
+  reactivateBusiness(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: any,
+  ) {
+    return this.businessService.reactivateBusiness(id, user);
   }
 
   @Patch(':id/status')

@@ -43,7 +43,7 @@ export class MailProvider {
       });
       this.logger.log(`Correo enviado correctamente a ${to} (${subject})`);
     } catch (error) {
-      this.logger.error(`Error al enviar correo a ${to}`, error);
+      this.logger.error(`Error al enviar correo a ${to}: ${(error as Error).message}`);
       throw error;
     }
   }

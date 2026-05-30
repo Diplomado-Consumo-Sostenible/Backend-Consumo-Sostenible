@@ -4,8 +4,11 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import bcrypt from 'bcryptjs';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { MailService } from 'src/mail/mail.service';
 import { User } from 'src/shared/entities/user.entity';
@@ -20,8 +23,8 @@ import {
   Business,
   BusinessStatus,
 } from '../../shared/entities/business.entity';
-import { Municipio } from '../../shared/entities/municipio.entity';
 import { Tag } from '../../shared/entities/tags.entity';
+import { Municipio } from '../../shared/entities/municipio.entity';
 import { createPaginationResponse } from '../../shared/pagination/pagination.helper';
 import { CreateBusinessDto } from '../dto/create-business.dto';
 import { GetBusinessesFilterDto } from '../dto/get-businesses-filter.dto';
@@ -30,9 +33,12 @@ import {
   PublicBusinessFilterDto,
 } from '../dto/public-business-filter.dto';
 import { UpdateBusinessDto } from '../dto/update-business.dto';
+import { DeleteBusinessDto } from '../dto/delete-business.dto';
 
 @Injectable()
 export class BusinessService {
+  private readonly logger = new Logger(BusinessService.name);
+
   constructor(
     private readonly businessRepository: BusinessRepository,
     private readonly categoryRepository: CategoryRepository,
@@ -92,6 +98,7 @@ export class BusinessService {
     const whereConditions: FindOptionsWhere<Business> = {
       status: BusinessStatus.ACTIVE,
       isActive: true,
+      isDeletedByOwner: false,
     };
     if (search) {
       whereConditions.businessName = ILike(`%${search}%`);
@@ -152,6 +159,7 @@ export class BusinessService {
         id_business: id,
         status: BusinessStatus.ACTIVE,
         isActive: true,
+        isDeletedByOwner: false,
       },
       relations: ['category', 'tags', 'certifications', 'user', 'municipio', 'municipio.departamento'],
     });
@@ -170,6 +178,7 @@ export class BusinessService {
       where: {
         status: BusinessStatus.ACTIVE,
         isActive: true,
+        isDeletedByOwner: false,
         total_reviews: MoreThanOrEqual(1),
       },
       relations: ['category', 'tags', 'certifications'],
@@ -196,13 +205,13 @@ export class BusinessService {
 
     if (roleName === 'admin') {
       return await this.businessRepository.find({
-        relations: ['category', 'tags', 'user', 'certifications'],
+        relations: ['category', 'tags', 'user', 'certifications', 'municipio', 'municipio.departamento'],
       });
     }
 
     return await this.businessRepository.find({
       where: { user: { id_usuario: user.id_usuario } },
-      relations: ['category', 'tags', 'certifications'],
+      relations: ['category', 'tags', 'certifications', 'municipio', 'municipio.departamento'],
     });
   }
 
@@ -344,10 +353,15 @@ export class BusinessService {
           await this.userRepository.update(user.id_usuario, { rol: ownerRole });
         }
       }
-      await this.mailService.sendBusinessWelcome(
-        user.email,
-        savedBusiness.businessName,
-      );
+
+      try {
+        await this.mailService.sendBusinessWelcome(
+          user.email,
+          savedBusiness.businessName,
+        );
+      } catch (mailErr) {
+        this.logger.warn(`Email de bienvenida no enviado: ${(mailErr as Error).message}`);
+      }
 
       this.eventEmitter.emit('business.created', {
         ownerId: user.id_usuario,
@@ -379,7 +393,7 @@ export class BusinessService {
 
     const business = await this.businessRepository.findOne({
       where: { id_business: id },
-      relations: ['user'],
+      relations: ['user', 'municipio'],
     });
 
     if (!business) throw new NotFoundException('Negocio no encontrado');
@@ -435,21 +449,29 @@ export class BusinessService {
     }
 
     if (municipioId !== undefined) {
-      const municipio = await this.municipioRepository.findOneBy({
-        id_municipio: municipioId,
-      });
-      if (!municipio) throw new NotFoundException('Municipio no encontrado');
-      business.municipio = municipio;
+      if (municipioId === null) {
+        business.municipio = null;
+      } else {
+        const municipio = await this.municipioRepository.findOneBy({
+          id_municipio: municipioId,
+        });
+        if (!municipio) throw new NotFoundException('Municipio no encontrado');
+        business.municipio = municipio;
+      }
     }
 
     Object.assign(business, businessData);
     await this.businessRepository.save(business);
 
     if (wasResubmitted && business.user?.email) {
-      await this.mailService.sendBusinessResubmitted(
-        business.user.email,
-        business.businessName,
-      );
+      try {
+        await this.mailService.sendBusinessResubmitted(
+          business.user.email,
+          business.businessName,
+        );
+      } catch (mailErr) {
+        this.logger.warn(`Email de reenvío no enviado: ${(mailErr as Error).message}`);
+      }
     }
 
     if (wasResubmitted && business.user?.id_usuario) {
@@ -469,8 +491,9 @@ export class BusinessService {
     };
   }
 
-  async remove(id: number, user: User) {
+  async remove(id: number, dto: DeleteBusinessDto, user: User) {
     const roleName = user.rol.nombre;
+    const isAdmin = roleName === 'admin';
 
     const business = await this.businessRepository.findOne({
       where: { id_business: id },
@@ -479,20 +502,122 @@ export class BusinessService {
 
     if (!business) throw new NotFoundException('Negocio no encontrado');
 
-    if (!business.isActive && roleName !== 'admin') {
+    if (!isAdmin && business.user.id_usuario !== user.id_usuario) {
       throw new ForbiddenException(
-        `Tu negocio ${business.businessName} fue desactivado por incumplimientos, contacta a administración si crees que fue un error`,
+        'No tienes permiso para eliminar este negocio.',
       );
     }
 
-    if (roleName !== 'admin' && business.user.id_usuario !== user.id_usuario) {
+
+    if (!business.isActive && !isAdmin) {
       throw new ForbiddenException(
-        'No tienes permiso para eliminar este negocio',
+        `El negocio "${business.businessName}" fue desactivado por moderación. Contacta a administración.`,
       );
     }
 
-    await this.businessRepository.remove(business);
-    return { message: `El negocio con ID ${id} fue eliminado permanentemente` };
+    if (business.isDeletedByOwner && !isAdmin) {
+      throw new BadRequestException(
+        `El negocio "${business.businessName}" ya fue marcado para eliminación. Puedes reactivarlo si cambiaste de opinión.`,
+      );
+    }
+
+    if (!isAdmin) {
+      if (!dto.password) {
+        throw new BadRequestException(
+          'Debes proporcionar tu contraseña para confirmar la eliminación del negocio.',
+        );
+      }
+
+      const userWithPassword = await this.userRepository.findOne({
+        where: { id_usuario: user.id_usuario },
+      });
+
+      if (!userWithPassword) {
+        throw new NotFoundException('Usuario no encontrado.');
+      }
+
+      const passwordMatch = await bcrypt.compare(
+        dto.password,
+        userWithPassword.password,
+      );
+
+      if (!passwordMatch) {
+        throw new UnauthorizedException(
+          'Contraseña incorrecta. No se pudo confirmar la eliminación.',
+        );
+      }
+    }
+
+    business.isDeletedByOwner = true;
+    await this.businessRepository.save(business);
+
+    return {
+      message: `El negocio "${business.businessName}" ha sido eliminado. Puedes reactivarlo cuando quieras desde tu panel.`,
+    };
+  }
+
+  async requestReactivation(id: number, user: User) {
+    const business = await this.businessRepository.findOne({
+      where: { id_business: id },
+      relations: ['user'],
+    });
+
+    if (!business) throw new NotFoundException('Negocio no encontrado');
+
+    if (business.user.id_usuario !== user.id_usuario) {
+      throw new ForbiddenException('No tienes permiso para solicitar la reactivación de este negocio.');
+    }
+
+    if (business.isActive) {
+      throw new BadRequestException('El negocio ya se encuentra activo.');
+    }
+
+    this.eventEmitter.emit('business.reactivation_requested', {
+      ownerId: user.id_usuario,
+      businessId: business.id_business,
+      businessName: business.businessName,
+    });
+
+    return {
+      message: `Solicitud de reactivación enviada para "${business.businessName}". Un administrador la revisará pronto.`,
+    };
+  }
+
+  async reactivateBusiness(id: number, user: User) {
+    const roleName = user.rol.nombre;
+    const isAdmin = roleName === 'admin';
+
+    const business = await this.businessRepository.findOne({
+      where: { id_business: id },
+      relations: ['user'],
+    });
+
+    if (!business) throw new NotFoundException('Negocio no encontrado');
+
+    if (!isAdmin && business.user.id_usuario !== user.id_usuario) {
+      throw new ForbiddenException(
+        'No tienes permiso para reactivar este negocio.',
+      );
+    }
+
+    if (!business.isDeletedByOwner) {
+      throw new BadRequestException(
+        'Este negocio no se encuentra en estado de eliminación por el dueño.',
+      );
+    }
+
+    if (!business.isActive && !isAdmin) {
+      throw new ForbiddenException(
+        `El negocio fue desactivado por moderación mientras estuvo eliminado. Contacta a administración.`,
+      );
+    }
+
+    business.isDeletedByOwner = false;
+    await this.businessRepository.save(business);
+
+    return {
+      message: `El negocio "${business.businessName}" ha sido reactivado exitosamente y vuelve a estar visible.`,
+    };
   }
 
   async changeStatus(
@@ -521,12 +646,16 @@ export class BusinessService {
     const updatedBusiness = await this.businessRepository.save(business);
 
     if (business.user?.email) {
-      await this.mailService.sendBusinessStatusChange(
-        business.user.email,
-        business.businessName,
-        status,
-        business.rejectionReason || undefined,
-      );
+      try {
+        await this.mailService.sendBusinessStatusChange(
+          business.user.email,
+          business.businessName,
+          status,
+          business.rejectionReason || undefined,
+        );
+      } catch (mailErr) {
+        this.logger.warn(`Email de cambio de estado no enviado: ${(mailErr as Error).message}`);
+      }
     }
 
     const ownerId = business.user?.id_usuario;
@@ -576,11 +705,15 @@ export class BusinessService {
     await this.businessRepository.save(business);
 
     if (business.user?.email) {
-      await this.mailService.sendBusinessToggle(
-        business.user.email,
-        business.businessName,
-        isActive,
-      );
+      try {
+        await this.mailService.sendBusinessToggle(
+          business.user.email,
+          business.businessName,
+          isActive,
+        );
+      } catch (mailErr) {
+        this.logger.warn(`Email de toggle no enviado: ${(mailErr as Error).message}`);
+      }
     }
 
     return {
