@@ -15,6 +15,7 @@ import { GeneroRepository } from 'src/shared/repositories/genero.repository';
 import { BusinessRepository } from 'src/shared/repositories/business.repository';
 import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
+import { DeleteAccountDto } from '../dto/delete-account.dto';
 import { ReviewRepository } from 'src/shared/repositories/review.repository';
 import { GetUsersFilterDto, UserSortBy } from '../dto/get-users-filter.dto';
 import { createPaginationResponse } from 'src/shared/pagination/pagination.helper';
@@ -256,10 +257,11 @@ export class UserService {
     return { message: 'Perfil actualizado exitosamente.' };
   }
 
-  async remove(id: number, currentUser: any) {
+  async remove(id: number, dto: DeleteAccountDto, currentUser: any) {
     const roleName = currentUser.rol.nombre;
+    const isAdmin = roleName === 'ADMIN';
 
-    if (roleName !== 'ADMIN' && currentUser.id_usuario !== id) {
+    if (!isAdmin && currentUser.id_usuario !== id) {
       throw new ForbiddenException(
         'No tienes permiso para eliminar esta cuenta.',
       );
@@ -271,6 +273,22 @@ export class UserService {
     });
 
     if (!userToDelete) throw new NotFoundException('Usuario no encontrado.');
+
+
+    if (!isAdmin) {
+      if (!dto.password) {
+        throw new BadRequestException(
+          'Debes proporcionar tu contraseña para confirmar la eliminación de tu cuenta.',
+        );
+      }
+
+      const isMatch = await bcrypt.compare(dto.password, userToDelete.password);
+      if (!isMatch) {
+        throw new UnauthorizedException(
+          'Contraseña incorrecta. No se pudo eliminar la cuenta.',
+        );
+      }
+    }
 
     const userReviews = await this.reviewRepository.find({
       where: { user: { id_usuario: id } },
@@ -301,7 +319,7 @@ export class UserService {
     }
 
     return {
-      message: `El usuario con ID ${id} y todos sus negocios han sido eliminados permanentemente.`,
+      message: `La cuenta ha sido eliminada permanentemente junto con todos sus datos asociados.`,
     };
   }
 

@@ -24,7 +24,8 @@ export class BusinessRepository extends Repository<Business> {
       .leftJoinAndSelect('b.municipio', 'municipio')
       .leftJoinAndSelect('municipio.departamento', 'dep')
       .where('b.status = :status', { status: 'Active' })
-      .andWhere('b.isActive = :isActive', { isActive: true });
+      .andWhere('b.isActive = :isActive', { isActive: true })
+      .andWhere('b.isDeletedByOwner = :isDeletedByOwner', { isDeletedByOwner: false });
 
     if (opts.id_category) {
       qb.andWhere('category.id_category = :id_category', {

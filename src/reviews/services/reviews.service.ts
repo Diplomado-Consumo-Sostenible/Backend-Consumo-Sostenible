@@ -326,6 +326,7 @@ export class ReviewsService {
       negocio: {
         id_business: r.business.id_business,
         nombre: r.business.businessName,
+        logo: r.business.logo,
       },
     }));
 

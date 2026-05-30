@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MailProvider } from './providers/mail.provider';
 import { ConfigService } from '@nestjs/config';
 import { WeeklySummaryDto } from '../notifications/dto/weekly-summary.dto';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
+
   constructor(
     private readonly mailProvider: MailProvider,
     private readonly configService: ConfigService,
   ) {}
+
 
   async sendPasswordResetOtp(email: string, otp: string) {
     const logoUrl = this.configService.get<string>('LOGOEXT_URL');
@@ -20,26 +23,33 @@ export class MailService {
     );
   }
 
-  async sendBusinessWelcome(email: string, businessName: string) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
 
-    await this.mailProvider.sendMail(
-      email,
-      'Solicitud de registro recibida - EcoVida',
-      'business-welcome',
-      { businessName, logoUrl },
-    );
+  async sendBusinessWelcome(email: string, businessName: string) {
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Solicitud de registro recibida - EcoVida',
+        'business-welcome',
+        { businessName, logoUrl },
+      );
+    } catch (err) {
+      this.logger.warn(`sendBusinessWelcome falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendBusinessResubmitted(email: string, businessName: string) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-
-    await this.mailProvider.sendMail(
-      email,
-      'Tu negocio está en revisión nuevamente ',
-      'business-resubmitted',
-      { businessName, logoUrl },
-    );
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Tu negocio está en revisión nuevamente ',
+        'business-resubmitted',
+        { businessName, logoUrl },
+      );
+    } catch (err) {
+      this.logger.warn(`sendBusinessResubmitted falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendBusinessStatusChange(
@@ -48,18 +58,21 @@ export class MailService {
     status: string,
     rejectionReason?: string,
   ) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-    const isApproved = status === 'Active';
-    const subject = isApproved
-      ? '¡Tu negocio ha sido aprobado! 🎉'
-      : 'Actualización sobre tu negocio en EcoVida';
-
-    await this.mailProvider.sendMail(email, subject, 'business-status', {
-      businessName,
-      isApproved,
-      rejectionReason,
-      logoUrl,
-    });
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      const isApproved = status === 'Active';
+      const subject = isApproved
+        ? '¡Tu negocio ha sido aprobado! 🎉'
+        : 'Actualización sobre tu negocio en EcoVida';
+      await this.mailProvider.sendMail(email, subject, 'business-status', {
+        businessName,
+        isApproved,
+        rejectionReason,
+        logoUrl,
+      });
+    } catch (err) {
+      this.logger.warn(`sendBusinessStatusChange falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendBusinessToggle(
@@ -67,16 +80,19 @@ export class MailService {
     businessName: string,
     isActive: boolean,
   ) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-    const subject = isActive
-      ? 'Tu negocio ha sido reactivado'
-      : 'Aviso: Tu negocio ha sido desactivado';
-
-    await this.mailProvider.sendMail(email, subject, 'business-toggle', {
-      businessName,
-      isActive,
-      logoUrl,
-    });
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      const subject = isActive
+        ? 'Tu negocio ha sido reactivado'
+        : 'Aviso: Tu negocio ha sido desactivado';
+      await this.mailProvider.sendMail(email, subject, 'business-toggle', {
+        businessName,
+        isActive,
+        logoUrl,
+      });
+    } catch (err) {
+      this.logger.warn(`sendBusinessToggle falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendNegativeReviewAlert(
@@ -84,25 +100,31 @@ export class MailService {
     businessName: string,
     comment: string,
   ) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-
-    await this.mailProvider.sendMail(
-      email,
-      'Alerta de reseña negativa',
-      'negative-review-alert',
-      { businessName, logoUrl, comment },
-    );
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Alerta de reseña negativa',
+        'negative-review-alert',
+        { businessName, logoUrl, comment },
+      );
+    } catch (err) {
+      this.logger.warn(`sendNegativeReviewAlert falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendReviewDeletedAlert(email: string, businessName: string) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-
-    await this.mailProvider.sendMail(
-      email,
-      'Aviso de moderación: Tu reseña ha sido eliminada',
-      'review-deleted',
-      { businessName, logoUrl },
-    );
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Aviso de moderación: Tu reseña ha sido eliminada',
+        'review-deleted',
+        { businessName, logoUrl },
+      );
+    } catch (err) {
+      this.logger.warn(`sendReviewDeletedAlert falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendCriticalRatingAlert(
@@ -110,14 +132,17 @@ export class MailService {
     businessName: string,
     currentRating: number,
   ) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-
-    await this.mailProvider.sendMail(
-      email,
-      'Alerta: Tu calificación general ha bajado',
-      'critical-rating-alert',
-      { businessName, logoUrl, currentRating },
-    );
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Alerta: Tu calificación general ha bajado',
+        'critical-rating-alert',
+        { businessName, logoUrl, currentRating },
+      );
+    } catch (err) {
+      this.logger.warn(`sendCriticalRatingAlert falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendAccumulatedNegativesAlert(
@@ -125,14 +150,17 @@ export class MailService {
     businessName: string,
     totalNegatives: number,
   ) {
-    const logoUrl = this.configService.get<string>('LOGOEXT_URL');
-
-    await this.mailProvider.sendMail(
-      email,
-      'Aviso sobre la percepción de tus clientes',
-      'accumulated-negatives-alert',
-      { businessName, logoUrl, totalNegatives },
-    );
+    try {
+      const logoUrl = this.configService.get<string>('LOGOEXT_URL');
+      await this.mailProvider.sendMail(
+        email,
+        'Aviso sobre la percepción de tus clientes',
+        'accumulated-negatives-alert',
+        { businessName, logoUrl, totalNegatives },
+      );
+    } catch (err) {
+      this.logger.warn(`sendAccumulatedNegativesAlert falló para ${email}: ${(err as Error).message}`);
+    }
   }
 
   async sendWeeklyReport(email: string, summary: WeeklySummaryDto) {
@@ -175,7 +203,7 @@ export class MailService {
 
     await this.mailProvider.sendMail(
       email,
-      `📊 Reporte semanal de tu negocio — ${weekEndStr}`,
+      `Reporte semanal de tu negocio — ${weekEndStr}`,
       'weekly-report',
       {
         businessName,

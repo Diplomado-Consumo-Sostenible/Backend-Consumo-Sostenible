@@ -1,9 +1,9 @@
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -46,9 +46,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const port = configService.get<number>('SERVER_PORT') || 3000;
-  await app.listen(port);
+  const port = configService.get<number>('SERVER_PORT') || 8080;
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 Server running on http://localhost:${port}/`);
+  console.log(`🚀 Server running on http://0.0.0.0:${port}/`);
 }
 bootstrap();

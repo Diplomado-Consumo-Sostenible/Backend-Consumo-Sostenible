@@ -7,6 +7,7 @@ import {
   IsObject,
   IsEmail,
   IsUrl,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -168,10 +169,12 @@ export class CreateBusinessDto {
   tagIds?: number[];
 
   @ApiPropertyOptional({
-    description: 'ID del municipio donde se ubica el negocio',
+    description: 'ID del municipio donde se ubica el negocio. Enviar null para limpiar.',
     example: 1,
+    nullable: true,
   })
   @IsOptional()
+  @ValidateIf((o) => o.municipioId !== null)
   @IsNumber()
-  municipioId?: number;
+  municipioId?: number | null;
 }

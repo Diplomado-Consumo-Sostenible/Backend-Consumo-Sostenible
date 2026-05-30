@@ -28,6 +28,7 @@ import { GetUsersFilterDto } from '../dto/get-users-filter.dto';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { ChangePasswordDto } from 'src/perfil/dto/change-password.dto';
 import { ChangeEmailDto } from 'src/perfil/dto/change-email.dto';
+import { DeleteAccountDto } from '../dto/delete-account.dto';
 
 @ApiTags('user')
 @ApiBearerAuth()
@@ -154,21 +155,40 @@ export class UserController {
   @Delete(':id')
   @Roles('ADMIN', 'owner', 'USER')
   @ApiOperation({
-    summary:
-      'Eliminar cuenta de usuario permanentemente (Admin o el propio usuario)',
+    summary: 'Eliminar cuenta de usuario permanentemente (Admin o el propio usuario)',
+    description:
+      'El propio usuario debe confirmar su contraseña en el body. El administrador puede eliminar cualquier cuenta sin contraseña.',
   })
   @ApiParam({
     name: 'id',
     description: 'ID del usuario a eliminar',
     type: 'number',
   })
+  @ApiBody({
+    type: DeleteAccountDto,
+    required: false,
+    description: 'Contraseña de confirmación (solo requerida para el propio usuario)',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Usuario y sus datos relacionados eliminados.',
+    description: 'Cuenta y todos sus datos eliminados permanentemente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Contraseña no proporcionada.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Contraseña incorrecta.',
   })
   @ApiResponse({ status: 403, description: 'Prohibido. No tienes permisos.' })
-  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
-    return this.userService.remove(id, user);
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado.' })
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() deleteAccountDto: DeleteAccountDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.userService.remove(id, deleteAccountDto, user);
   }
 
   @Patch('me/password')
